@@ -21,6 +21,7 @@ struct Config {
     std::string url{"https://www.icecast.org/"};
     Protocol protocol{Protocol::Http};
     int bitrate_kbps{128};
+    int crossfade_seconds{0};
     bool reencode{false};
     bool once{false};
     bool verbose{false};

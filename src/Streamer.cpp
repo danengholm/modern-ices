@@ -1,6 +1,7 @@
 #include "Streamer.hpp"
 
 #include "AudioDecoder.hpp"
+#include "Crossfader.hpp"
 #include "Error.hpp"
 #include "IcecastClient.hpp"
 #include "LameEncoder.hpp"
@@ -11,6 +12,7 @@
 #include <array>
 #include <fstream>
 #include <memory>
+#include <vector>
 
 namespace modern_ices {
 namespace {
@@ -35,9 +37,16 @@ void Streamer::run() {
     if (config_.reencode) {
         mpg123_runtime = std::make_unique<Mpg123Runtime>();
     }
+    if (config_.crossfade_seconds > 0 && !config_.reencode) {
+        throw Error("crossfade requires --reencode");
+    }
 
     Playlist playlist(config_.playlist_path);
     Logger::info("Loaded " + std::to_string(playlist.size()) + " playlist entries");
+    if (config_.crossfade_seconds > 0) {
+        stream_crossfaded(playlist);
+        return;
+    }
 
     std::size_t successes{0};
     std::size_t attempts{0};
@@ -128,6 +137,87 @@ void Streamer::stream_transcoded(const std::string& path) {
             break;
         }
         send_pcm(pcm);
+    }
+
+    if (encoder) {
+        auto tail{encoder->flush()};
+        if (!tail.empty()) {
+            client.send(tail.data(), tail.size());
+            client.sync();
+        }
+    }
+}
+
+void Streamer::stream_crossfaded(Playlist& playlist) {
+    IcecastClient client(config_);
+    client.connect();
+
+    Crossfader crossfader(config_.crossfade_seconds);
+    std::unique_ptr<LameEncoder> encoder{};
+    long encoded_sample_rate{0};
+    int encoded_channels{0};
+
+    auto send_pcm = [&](const PcmBlock& pcm) {
+        if (pcm.empty()) {
+            return;
+        }
+        if (!encoder) {
+            encoder =
+                std::make_unique<LameEncoder>(pcm.sample_rate, pcm.channels, config_.bitrate_kbps);
+            encoded_sample_rate = pcm.sample_rate;
+            encoded_channels = pcm.channels;
+        } else if (pcm.sample_rate != encoded_sample_rate || pcm.channels != encoded_channels) {
+            throw Error("input stream changed audio format during crossfade transcoding");
+        }
+
+        auto encoded{encoder->encode(pcm)};
+        if (!encoded.empty()) {
+            client.send(encoded.data(), encoded.size());
+            client.sync();
+        }
+    };
+
+    auto send_blocks = [&](std::vector<PcmBlock> blocks) {
+        for (const auto& block : blocks) {
+            send_pcm(block);
+        }
+    };
+
+    std::size_t successes{0};
+    std::size_t attempts{0};
+    for (;;) {
+        if (config_.once && attempts >= playlist.size()) {
+            if (successes == 0) {
+                throw Error("no playlist entries streamed successfully");
+            }
+            send_pcm(crossfader.finish());
+            break;
+        }
+
+        const auto path{playlist.next()};
+        ++attempts;
+        try {
+            Logger::info("Playing " + path);
+            auto decoder{open_audio_decoder(path)};
+            bool started{false};
+            for (;;) {
+                auto pcm{decoder->read()};
+                if (pcm.empty()) {
+                    break;
+                }
+                if (!started) {
+                    send_pcm(crossfader.start_track(pcm));
+                    started = true;
+                }
+                send_blocks(crossfader.process(pcm));
+            }
+            if (!started) {
+                throw Error("decoded no audio samples");
+            }
+            ++successes;
+        } catch (const std::exception& e) {
+            Logger::error("skipping " + path + ": " + e.what());
+        }
     }
 
     if (encoder) {

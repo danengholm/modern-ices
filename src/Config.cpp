@@ -55,6 +55,7 @@ void Config::print_usage(const char* argv0) {
         << "  -d, --description TEXT   stream description metadata\n"
         << "  -t, --protocol http|icy  stream protocol [http]\n"
         << "  -b, --bitrate KBPS       output bitrate for transcoding [128]\n"
+        << "  -x, --crossfade SECONDS  crossfade length; requires --reencode [0]\n"
         << "  -R, --reencode           decode MP3, Ogg Vorbis, or FLAC and re-encode to bitrate\n"
         << "      --once               stream each playlist entry once, then exit\n"
         << "  -v, --verbose            verbose logging\n"
@@ -91,6 +92,8 @@ Config Config::parse(int argc, char** argv) {
             config.protocol = parse_protocol(require_value(i, argc, argv, arg));
         } else if (arg == "-b" || arg == "--bitrate") {
             config.bitrate_kbps = parse_int(require_value(i, argc, argv, arg), arg, 8, 512);
+        } else if (arg == "-x" || arg == "--crossfade") {
+            config.crossfade_seconds = parse_int(require_value(i, argc, argv, arg), arg, 0, 3600);
         } else if (arg == "-R" || arg == "--reencode") {
             config.reencode = true;
         } else if (arg == "--once") {

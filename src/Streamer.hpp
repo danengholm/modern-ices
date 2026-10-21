@@ -6,6 +6,8 @@
 
 namespace modern_ices {
 
+class Playlist;
+
 // Coordinates playlist iteration, source connections, optional decoding, and MP3 output.
 class Streamer {
   public:
@@ -18,6 +20,7 @@ class Streamer {
     void stream_file(const std::string& path);
     void stream_passthrough(const std::string& path);
     void stream_transcoded(const std::string& path);
+    void stream_crossfaded(Playlist& playlist);
 };
 
 } // namespace modern_ices

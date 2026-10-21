@@ -13,6 +13,7 @@ TARGET = modern-ices
 SRCS = \
 	src/AudioDecoder.cpp \
 	src/Config.cpp \
+	src/Crossfader.cpp \
 	src/FlacDecoder.cpp \
 	src/IcecastClient.cpp \
 	src/LameEncoder.cpp \
