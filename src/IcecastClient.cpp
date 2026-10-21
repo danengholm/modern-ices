@@ -31,7 +31,7 @@ ShoutRuntime::~ShoutRuntime() {
     shout_shutdown();
 }
 
-IcecastClient::IcecastClient(const Config& config) : shout_(shout_new()) {
+IcecastClient::IcecastClient(const Config& config) : shout_{shout_new()} {
     if (!shout_) {
         throw Error("libshout failed to allocate a connection object");
     }
@@ -92,10 +92,10 @@ void IcecastClient::check(int rc, const std::string& action) const {
 }
 
 std::string IcecastClient::last_error(const std::string& action) const {
-    std::ostringstream out;
+    std::ostringstream out{};
     out << "libshout failed to " << action;
     if (shout_) {
-        const char* detail = shout_get_error(shout_);
+        const char* detail{shout_get_error(shout_)};
         if (detail && *detail) {
             out << ": " << detail;
         }

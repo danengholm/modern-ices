@@ -27,8 +27,8 @@ class VorbisDecoder final : public PcmDecoder {
 
   private:
     OggVorbis_File file_{};
-    bool opened_ = false;
-    int current_section_ = 0;
+    bool opened_{false};
+    int current_section_{0};
 
     static const char* error_name(long rc);
 };

@@ -10,8 +10,8 @@ namespace modern_ices {
 struct PcmBlock {
     std::vector<std::int16_t> left;
     std::vector<std::int16_t> right;
-    long sample_rate = 0;
-    int channels = 0;
+    long sample_rate{0};
+    int channels{0};
 
     bool empty() const { return left.empty(); }
     int samples() const { return static_cast<int>(left.size()); }

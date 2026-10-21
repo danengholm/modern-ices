@@ -20,7 +20,7 @@ class LameEncoder {
     std::vector<unsigned char> flush();
 
   private:
-    lame_global_flags* flags_ = nullptr;
+    lame_global_flags* flags_{nullptr};
 
     void check_set(int rc, const char* action);
 };

@@ -10,7 +10,7 @@ namespace modern_ices {
 namespace {
 
 std::int16_t flac_to_i16(FLAC__int32 sample, unsigned bits_per_sample) {
-    std::int64_t value = sample;
+    std::int64_t value{sample};
     if (bits_per_sample > 16) {
         value >>= (bits_per_sample - 16);
     } else if (bits_per_sample < 16) {
@@ -63,14 +63,14 @@ PcmBlock FlacDecoder::read() {
 
     for (;;) {
         check_callback_error();
-        const auto state = FLAC__stream_decoder_get_state(decoder_);
+        const auto state{FLAC__stream_decoder_get_state(decoder_)};
         if (state == FLAC__STREAM_DECODER_END_OF_STREAM) {
             return {};
         }
 
         if (!FLAC__stream_decoder_process_single(decoder_)) {
             check_callback_error();
-            const auto failed_state = FLAC__stream_decoder_get_state(decoder_);
+            const auto failed_state{FLAC__stream_decoder_get_state(decoder_)};
             if (failed_state == FLAC__STREAM_DECODER_END_OF_STREAM) {
                 return {};
             }
@@ -105,10 +105,10 @@ FLAC__StreamDecoderWriteStatus FlacDecoder::handle_write(const FLAC__Frame* fram
         return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
     }
 
-    const auto channels = frame->header.channels;
-    const auto bits_per_sample = frame->header.bits_per_sample;
-    const auto sample_rate = frame->header.sample_rate;
-    const auto samples = frame->header.blocksize;
+    const auto channels{frame->header.channels};
+    const auto bits_per_sample{frame->header.bits_per_sample};
+    const auto sample_rate{frame->header.sample_rate};
+    const auto samples{frame->header.blocksize};
 
     if (channels != 1 && channels != 2) {
         set_callback_error("FLAC stream has unsupported channel count: " +
@@ -125,14 +125,14 @@ FLAC__StreamDecoderWriteStatus FlacDecoder::handle_write(const FLAC__Frame* fram
         return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
     }
 
-    PcmBlock block;
+    PcmBlock block{};
     block.sample_rate = static_cast<long>(sample_rate);
     block.channels = static_cast<int>(channels);
     block.left.reserve(samples);
     block.right.reserve(samples);
 
-    for (unsigned i = 0; i < samples; ++i) {
-        const auto left = flac_to_i16(buffer[0][i], bits_per_sample);
+    for (unsigned i{0}; i < samples; ++i) {
+        const auto left{flac_to_i16(buffer[0][i], bits_per_sample)};
         block.left.push_back(left);
         block.right.push_back(channels == 1 ? left : flac_to_i16(buffer[1][i], bits_per_sample));
     }
@@ -167,19 +167,19 @@ FLAC__StreamDecoderWriteStatus FlacDecoder::write_callback(const FLAC__StreamDec
                                                            const FLAC__Frame* frame,
                                                            const FLAC__int32* const buffer[],
                                                            void* client_data) {
-    auto* self = static_cast<FlacDecoder*>(client_data);
+    auto* self{static_cast<FlacDecoder*>(client_data)};
     return self->handle_write(frame, buffer);
 }
 
 void FlacDecoder::metadata_callback(const FLAC__StreamDecoder*,
                                     const FLAC__StreamMetadata* metadata, void* client_data) {
-    auto* self = static_cast<FlacDecoder*>(client_data);
+    auto* self{static_cast<FlacDecoder*>(client_data)};
     self->handle_metadata(metadata);
 }
 
 void FlacDecoder::error_callback(const FLAC__StreamDecoder*, FLAC__StreamDecoderErrorStatus status,
                                  void* client_data) {
-    auto* self = static_cast<FlacDecoder*>(client_data);
+    auto* self{static_cast<FlacDecoder*>(client_data)};
     self->decoder_error_ = FLAC__StreamDecoderErrorStatusString[status];
 }
 

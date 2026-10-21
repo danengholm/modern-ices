@@ -7,7 +7,7 @@
 
 namespace modern_ices {
 
-LameEncoder::LameEncoder(long sample_rate, int channels, int bitrate_kbps) : flags_(lame_init()) {
+LameEncoder::LameEncoder(long sample_rate, int channels, int bitrate_kbps) : flags_{lame_init()} {
     if (!flags_) {
         throw Error("lame_init failed");
     }
@@ -34,10 +34,10 @@ std::vector<unsigned char> LameEncoder::encode(const PcmBlock& pcm) {
     if (pcm.empty()) {
         return {};
     }
-    const int samples = pcm.samples();
+    const int samples{pcm.samples()};
     std::vector<unsigned char> output(7200 + static_cast<std::size_t>(samples) * 5 / 4);
-    const int bytes = lame_encode_buffer(flags_, pcm.left.data(), pcm.right.data(), samples,
-                                         output.data(), static_cast<int>(output.size()));
+    const int bytes{lame_encode_buffer(flags_, pcm.left.data(), pcm.right.data(), samples,
+                                       output.data(), static_cast<int>(output.size()))};
     if (bytes < 0) {
         throw Error("lame_encode_buffer failed with code " + std::to_string(bytes));
     }
@@ -47,7 +47,7 @@ std::vector<unsigned char> LameEncoder::encode(const PcmBlock& pcm) {
 
 std::vector<unsigned char> LameEncoder::flush() {
     std::vector<unsigned char> output(7200);
-    const int bytes = lame_encode_flush(flags_, output.data(), static_cast<int>(output.size()));
+    const int bytes{lame_encode_flush(flags_, output.data(), static_cast<int>(output.size()))};
     if (bytes < 0) {
         throw Error("lame_encode_flush failed with code " + std::to_string(bytes));
     }

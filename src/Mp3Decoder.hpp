@@ -34,12 +34,12 @@ class Mp3Decoder final : public PcmDecoder {
   private:
     std::ifstream input_;
     std::array<unsigned char, 8192> input_buffer_{};
-    mpg123_handle* handle_ = nullptr;
-    long sample_rate_ = 0;
-    int channels_ = 0;
-    int encoding_ = 0;
-    bool input_done_ = false;
-    bool decoder_drained_ = false;
+    mpg123_handle* handle_{nullptr};
+    long sample_rate_{0};
+    int channels_{0};
+    int encoding_{0};
+    bool input_done_{false};
+    bool decoder_drained_{false};
 
     PcmBlock decode(const unsigned char* data, std::size_t length);
     PcmBlock drain();

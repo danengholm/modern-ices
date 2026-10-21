@@ -16,7 +16,7 @@ namespace modern_ices {
 namespace {
 
 std::ifstream open_binary(const std::string& path) {
-    std::ifstream input(path, std::ios::binary);
+    std::ifstream input{path, std::ios::binary};
     if (!input) {
         throw Error("unable to open input file: " + path);
     }
@@ -25,12 +25,12 @@ std::ifstream open_binary(const std::string& path) {
 
 } // namespace
 
-Streamer::Streamer(Config config) : config_(std::move(config)) {
+Streamer::Streamer(Config config) : config_{std::move(config)} {
 }
 
 void Streamer::run() {
-    ShoutRuntime shout_runtime;
-    std::unique_ptr<Mpg123Runtime> mpg123_runtime;
+    ShoutRuntime shout_runtime{};
+    std::unique_ptr<Mpg123Runtime> mpg123_runtime{};
     if (config_.reencode) {
         mpg123_runtime = std::make_unique<Mpg123Runtime>();
     }
@@ -38,8 +38,8 @@ void Streamer::run() {
     Playlist playlist(config_.playlist_path);
     Logger::info("Loaded " + std::to_string(playlist.size()) + " playlist entries");
 
-    std::size_t successes = 0;
-    std::size_t attempts = 0;
+    std::size_t successes{0};
+    std::size_t attempts{0};
     for (;;) {
         if (config_.once && attempts >= playlist.size()) {
             if (successes == 0) {
@@ -48,7 +48,7 @@ void Streamer::run() {
             return;
         }
 
-        const auto path = playlist.next();
+        const auto path{playlist.next()};
         ++attempts;
         try {
             stream_file(path);
@@ -69,7 +69,7 @@ void Streamer::stream_file(const std::string& path) {
 }
 
 void Streamer::stream_passthrough(const std::string& path) {
-    auto input = open_binary(path);
+    auto input{open_binary(path)};
     IcecastClient client(config_);
     client.connect();
 
@@ -77,7 +77,7 @@ void Streamer::stream_passthrough(const std::string& path) {
     while (input) {
         input.read(reinterpret_cast<char*>(buffer.data()),
                    static_cast<std::streamsize>(buffer.size()));
-        const auto bytes = input.gcount();
+        const auto bytes{input.gcount()};
         if (bytes > 0) {
             client.send(buffer.data(), static_cast<std::size_t>(bytes));
             client.sync();
@@ -92,10 +92,10 @@ void Streamer::stream_transcoded(const std::string& path) {
     IcecastClient client(config_);
     client.connect();
 
-    auto decoder = open_audio_decoder(path);
-    std::unique_ptr<LameEncoder> encoder;
-    long encoded_sample_rate = 0;
-    int encoded_channels = 0;
+    auto decoder{open_audio_decoder(path)};
+    std::unique_ptr<LameEncoder> encoder{};
+    long encoded_sample_rate{0};
+    int encoded_channels{0};
 
     auto send_pcm = [&](const PcmBlock& pcm) {
         if (pcm.empty()) {
@@ -110,7 +110,7 @@ void Streamer::stream_transcoded(const std::string& path) {
             throw Error("input stream changed audio format during transcoding");
         }
 
-        auto encoded = encoder->encode(pcm);
+        auto encoded{encoder->encode(pcm)};
         if (!encoded.empty()) {
             client.send(encoded.data(), encoded.size());
             client.sync();
@@ -118,7 +118,7 @@ void Streamer::stream_transcoded(const std::string& path) {
     };
 
     for (;;) {
-        auto pcm = decoder->read();
+        auto pcm{decoder->read()};
         if (pcm.empty()) {
             break;
         }
@@ -126,7 +126,7 @@ void Streamer::stream_transcoded(const std::string& path) {
     }
 
     if (encoder) {
-        auto tail = encoder->flush();
+        auto tail{encoder->flush()};
         if (!tail.empty()) {
             client.send(tail.data(), tail.size());
             client.sync();

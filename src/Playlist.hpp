@@ -16,7 +16,7 @@ class Playlist {
 
   private:
     std::vector<std::string> entries_;
-    std::size_t cursor_ = 0;
+    std::size_t cursor_{0};
 };
 
 } // namespace modern_ices

@@ -18,9 +18,9 @@ std::string require_value(int& index, int argc, char** argv, std::string_view op
 }
 
 int parse_int(const std::string& value, std::string_view option, int min, int max) {
-    int result = 0;
-    const char* begin = value.data();
-    const char* end = value.data() + value.size();
+    int result{0};
+    const char* begin{value.data()};
+    const char* end{value.data() + value.size()};
     auto [ptr, ec] = std::from_chars(begin, end, result);
     if (ec != std::errc{} || ptr != end || result < min || result > max) {
         throw Error("invalid numeric value for " + std::string(option) + ": " + value);
@@ -62,15 +62,15 @@ void Config::print_usage(const char* argv0) {
 }
 
 Config Config::parse(int argc, char** argv) {
-    Config config;
-    for (int i = 1; i < argc; ++i) {
-        std::string_view arg = argv[i];
+    Config config{};
+    for (int i{1}; i < argc; ++i) {
+        std::string_view arg{argv[i]};
         if (arg == "-F" || arg == "--playlist") {
             config.playlist_path = require_value(i, argc, argv, arg);
         } else if (arg == "-h" || arg == "--host") {
             config.host = require_value(i, argc, argv, arg);
         } else if (arg == "-p" || arg == "--port") {
-            auto value = require_value(i, argc, argv, arg);
+            auto value{require_value(i, argc, argv, arg)};
             config.port = static_cast<std::uint16_t>(parse_int(value, arg, 1, 65535));
         } else if (arg == "-P" || arg == "--password") {
             config.password = require_value(i, argc, argv, arg);

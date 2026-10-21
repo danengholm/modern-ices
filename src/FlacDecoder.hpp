@@ -18,7 +18,7 @@ class FlacDecoder final : public PcmDecoder {
     PcmBlock read() override;
 
   private:
-    FLAC__StreamDecoder* decoder_ = nullptr;
+    FLAC__StreamDecoder* decoder_{nullptr};
     PcmBlock pending_;
     std::string callback_error_;
     std::string decoder_error_;

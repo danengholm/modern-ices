@@ -17,13 +17,13 @@ namespace {
 enum class AudioKind { Mp3, OggVorbis, Flac };
 
 std::string lowercase_extension(const std::string& path) {
-    const auto slash = path.find_last_of("/\\");
-    const auto dot = path.find_last_of('.');
+    const auto slash{path.find_last_of("/\\")};
+    const auto dot{path.find_last_of('.')};
     if (dot == std::string::npos || (slash != std::string::npos && dot < slash)) {
         return {};
     }
 
-    std::string extension = path.substr(dot);
+    std::string extension{path.substr(dot)};
     std::transform(extension.begin(), extension.end(), extension.begin(),
                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return extension;
@@ -31,12 +31,12 @@ std::string lowercase_extension(const std::string& path) {
 
 AudioKind detect_audio_kind(const std::string& path) {
     std::array<unsigned char, 12> header{};
-    std::ifstream input(path, std::ios::binary);
+    std::ifstream input{path, std::ios::binary};
     if (!input) {
         throw Error("unable to open input file: " + path);
     }
     input.read(reinterpret_cast<char*>(header.data()), static_cast<std::streamsize>(header.size()));
-    const auto bytes = input.gcount();
+    const auto bytes{input.gcount()};
     if (input.bad()) {
         throw Error("unable to read input file header: " + path);
     }
@@ -56,7 +56,7 @@ AudioKind detect_audio_kind(const std::string& path) {
         return AudioKind::Mp3;
     }
 
-    const auto extension = lowercase_extension(path);
+    const auto extension{lowercase_extension(path)};
     if (extension == ".flac") {
         return AudioKind::Flac;
     }

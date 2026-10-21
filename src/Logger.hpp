@@ -20,7 +20,7 @@ class Logger {
     static void error(const std::string& message) { std::cerr << "error: " << message << '\n'; }
 
   private:
-    inline static bool verbose_ = false;
+    inline static bool verbose_{false};
 };
 
 } // namespace modern_ices

@@ -31,7 +31,7 @@ class IcecastClient {
     void sync() noexcept;
 
   private:
-    shout_t* shout_ = nullptr;
+    shout_t* shout_{nullptr};
 
     void check(int rc, const std::string& action) const;
     std::string last_error(const std::string& action) const;

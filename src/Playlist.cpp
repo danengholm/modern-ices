@@ -10,7 +10,7 @@ namespace modern_ices {
 namespace {
 
 std::string trim(std::string line) {
-    auto not_space = [](unsigned char c) { return !std::isspace(c); };
+    const auto not_space{[](unsigned char c) { return !std::isspace(c); }};
     line.erase(line.begin(), std::find_if(line.begin(), line.end(), not_space));
     line.erase(std::find_if(line.rbegin(), line.rend(), not_space).base(), line.end());
     return line;
@@ -19,12 +19,12 @@ std::string trim(std::string line) {
 } // namespace
 
 Playlist::Playlist(const std::string& path) {
-    std::ifstream in(path);
+    std::ifstream in{path};
     if (!in) {
         throw Error("unable to open playlist: " + path);
     }
 
-    std::string line;
+    std::string line{};
     while (std::getline(in, line)) {
         line = trim(line);
         if (!line.empty() && line.front() != '#') {
