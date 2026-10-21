@@ -37,19 +37,25 @@ void Streamer::run() {
   Playlist playlist(config_.playlist_path);
   Logger::info("Loaded " + std::to_string(playlist.size()) + " playlist entries");
 
-  std::size_t played = 0;
-  do {
+  std::size_t successes = 0;
+  std::size_t attempts = 0;
+  for (;;) {
+    if (config_.once && attempts >= playlist.size()) {
+      if (successes == 0) {
+        throw Error("no playlist entries streamed successfully");
+      }
+      return;
+    }
+
     const auto path = playlist.next();
+    ++attempts;
     try {
       stream_file(path);
-      ++played;
+      ++successes;
     } catch (const std::exception& e) {
       Logger::error("skipping " + path + ": " + e.what());
-      if (config_.once && played + 1 >= playlist.size()) {
-        throw;
-      }
     }
-  } while (!config_.once);
+  }
 }
 
 void Streamer::stream_file(const std::string& path) {
