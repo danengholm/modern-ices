@@ -16,21 +16,21 @@
 namespace modern_ices {
 
 class VorbisDecoder final : public PcmDecoder {
-public:
-  explicit VorbisDecoder(const std::string& path);
-  ~VorbisDecoder() override;
+  public:
+    explicit VorbisDecoder(const std::string& path);
+    ~VorbisDecoder() override;
 
-  VorbisDecoder(const VorbisDecoder&) = delete;
-  VorbisDecoder& operator=(const VorbisDecoder&) = delete;
+    VorbisDecoder(const VorbisDecoder&) = delete;
+    VorbisDecoder& operator=(const VorbisDecoder&) = delete;
 
-  PcmBlock read() override;
+    PcmBlock read() override;
 
-private:
-  OggVorbis_File file_{};
-  bool opened_ = false;
-  int current_section_ = 0;
+  private:
+    OggVorbis_File file_{};
+    bool opened_ = false;
+    int current_section_ = 0;
 
-  static const char* error_name(long rc);
+    static const char* error_name(long rc);
 };
 
 } // namespace modern_ices

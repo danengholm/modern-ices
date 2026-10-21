@@ -8,26 +8,26 @@
 namespace modern_ices {
 
 struct PcmBlock {
-  std::vector<std::int16_t> left;
-  std::vector<std::int16_t> right;
-  long sample_rate = 0;
-  int channels = 0;
+    std::vector<std::int16_t> left;
+    std::vector<std::int16_t> right;
+    long sample_rate = 0;
+    int channels = 0;
 
-  bool empty() const { return left.empty(); }
-  int samples() const { return static_cast<int>(left.size()); }
+    bool empty() const { return left.empty(); }
+    int samples() const { return static_cast<int>(left.size()); }
 };
 
 class PcmDecoder {
-public:
-  virtual ~PcmDecoder() = default;
+  public:
+    virtual ~PcmDecoder() = default;
 
-  PcmDecoder(const PcmDecoder&) = delete;
-  PcmDecoder& operator=(const PcmDecoder&) = delete;
+    PcmDecoder(const PcmDecoder&) = delete;
+    PcmDecoder& operator=(const PcmDecoder&) = delete;
 
-  virtual PcmBlock read() = 0;
+    virtual PcmBlock read() = 0;
 
-protected:
-  PcmDecoder() = default;
+  protected:
+    PcmDecoder() = default;
 };
 
 std::unique_ptr<PcmDecoder> open_audio_decoder(const std::string& path);
