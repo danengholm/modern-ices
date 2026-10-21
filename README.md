@@ -63,3 +63,16 @@ modern-ices -F playlist.txt -R -x 5
 ```
 
 Use `modern-ices --help` for all supported options.
+
+## Development Process
+
+This project is being developed collaboratively with Codex in a vibe-coding
+workflow: the human maintainer sets direction, tests against real audio and
+server setups, and reviews behavior and style, while Codex helps translate that
+intent into C++23 code, build-system updates, verification runs, and focused
+follow-up fixes.
+
+Changes should stay easy to review. Prefer small commits with one concern each,
+keep formatting-only work separate from behavior changes, run `clang-format`
+before committing C++ files, and verify with `make` plus an Icecast smoke test
+when networking is available.
