@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Mp3Decoder.hpp"
+#include "AudioDecoder.hpp"
 
 #include <cstdint>
 #include <vector>

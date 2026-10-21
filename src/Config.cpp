@@ -55,7 +55,7 @@ void Config::print_usage(const char* argv0) {
       << "  -d, --description TEXT   stream description metadata\n"
       << "  -t, --protocol http|icy  stream protocol [http]\n"
       << "  -b, --bitrate KBPS       output bitrate for transcoding [128]\n"
-      << "  -R, --reencode           decode MP3 and re-encode to bitrate\n"
+      << "  -R, --reencode           decode MP3, Ogg Vorbis, or FLAC and re-encode to bitrate\n"
       << "      --once               stream each playlist entry once, then exit\n"
       << "  -v, --verbose            verbose logging\n"
       << "      --help               show this help\n";

@@ -2,7 +2,6 @@
 
 #include "Error.hpp"
 
-#include <algorithm>
 #include <string>
 
 namespace modern_ices {
@@ -18,7 +17,11 @@ Mpg123Runtime::~Mpg123Runtime() {
   mpg123_exit();
 }
 
-Mp3Decoder::Mp3Decoder() {
+Mp3Decoder::Mp3Decoder(std::string path) : input_(path, std::ios::binary) {
+  if (!input_) {
+    throw Error("unable to open MP3 input file: " + path);
+  }
+
   int err = MPG123_OK;
   handle_ = mpg123_new(nullptr, &err);
   if (!handle_) {
@@ -34,6 +37,37 @@ Mp3Decoder::~Mp3Decoder() {
   if (handle_) {
     (void)mpg123_close(handle_);
     mpg123_delete(handle_);
+  }
+}
+
+PcmBlock Mp3Decoder::read() {
+  for (;;) {
+    if (!input_done_) {
+      input_.read(reinterpret_cast<char*>(input_buffer_.data()),
+                  static_cast<std::streamsize>(input_buffer_.size()));
+      const auto bytes = input_.gcount();
+      if (bytes > 0) {
+        auto block = decode(input_buffer_.data(), static_cast<std::size_t>(bytes));
+        if (!block.empty()) {
+          return block;
+        }
+        continue;
+      }
+      if (input_.bad()) {
+        throw Error("read failed for MP3 input file");
+      }
+      input_done_ = true;
+    }
+
+    if (!decoder_drained_) {
+      auto block = drain();
+      if (!block.empty()) {
+        return block;
+      }
+      decoder_drained_ = true;
+    }
+
+    return {};
   }
 }
 

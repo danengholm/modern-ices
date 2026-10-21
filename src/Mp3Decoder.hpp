@@ -1,7 +1,12 @@
 #pragma once
 
+#include "AudioDecoder.hpp"
+
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <fstream>
+#include <string>
 #include <vector>
 #include <mpg123.h>
 
@@ -16,33 +21,28 @@ public:
   Mpg123Runtime& operator=(const Mpg123Runtime&) = delete;
 };
 
-struct PcmBlock {
-  std::vector<std::int16_t> left;
-  std::vector<std::int16_t> right;
-  long sample_rate = 0;
-  int channels = 0;
-
-  bool empty() const { return left.empty(); }
-  int samples() const { return static_cast<int>(left.size()); }
-};
-
-class Mp3Decoder {
+class Mp3Decoder final : public PcmDecoder {
 public:
-  Mp3Decoder();
-  ~Mp3Decoder();
+  explicit Mp3Decoder(std::string path);
+  ~Mp3Decoder() override;
 
   Mp3Decoder(const Mp3Decoder&) = delete;
   Mp3Decoder& operator=(const Mp3Decoder&) = delete;
 
-  PcmBlock decode(const unsigned char* data, std::size_t length);
-  PcmBlock drain();
+  PcmBlock read() override;
 
 private:
+  std::ifstream input_;
+  std::array<unsigned char, 8192> input_buffer_{};
   mpg123_handle* handle_ = nullptr;
   long sample_rate_ = 0;
   int channels_ = 0;
   int encoding_ = 0;
+  bool input_done_ = false;
+  bool decoder_drained_ = false;
 
+  PcmBlock decode(const unsigned char* data, std::size_t length);
+  PcmBlock drain();
   void configure_formats();
   void refresh_format();
   PcmBlock convert_pcm(const std::vector<std::int16_t>& interleaved, std::size_t bytes_done) const;

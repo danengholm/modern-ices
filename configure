@@ -22,6 +22,8 @@ Options:
   --with-shout=DIR      libshout prefix
   --with-mpg123=DIR     libmpg123 prefix
   --with-lame=DIR       libmp3lame prefix
+  --with-vorbis=DIR     libvorbis/libvorbisfile prefix
+  --with-flac=DIR       libFLAC prefix
   --enable-debug        add debug-friendly compiler flags
   --help                show this help
 
@@ -34,17 +36,7 @@ for arg in "$@"; do
   case "$arg" in
     --prefix=*) prefix=${arg#*=} ;;
     --bindir=*) bindir=${arg#*=} ;;
-    --with-shout=*)
-      d=${arg#*=}
-      extra_cppflags="$extra_cppflags -I$d/include"
-      extra_ldflags="$extra_ldflags -L$d/lib"
-      ;;
-    --with-mpg123=*)
-      d=${arg#*=}
-      extra_cppflags="$extra_cppflags -I$d/include"
-      extra_ldflags="$extra_ldflags -L$d/lib"
-      ;;
-    --with-lame=*)
+    --with-shout=*|--with-mpg123=*|--with-lame=*|--with-vorbis=*|--with-flac=*)
       d=${arg#*=}
       extra_cppflags="$extra_cppflags -I$d/include"
       extra_ldflags="$extra_ldflags -L$d/lib"
@@ -77,8 +69,20 @@ if command -v pkg-config >/dev/null 2>&1; then
   else
     extra_libs="$extra_libs -lmpg123"
   fi
+  if pkg-config --exists vorbisfile; then
+    extra_cppflags="$extra_cppflags $(pkg-config --cflags vorbisfile)"
+    extra_libs="$extra_libs $(pkg-config --libs vorbisfile)"
+  else
+    extra_libs="$extra_libs -lvorbisfile -lvorbis -logg"
+  fi
+  if pkg-config --exists flac; then
+    extra_cppflags="$extra_cppflags $(pkg-config --cflags flac)"
+    extra_libs="$extra_libs $(pkg-config --libs flac)"
+  else
+    extra_libs="$extra_libs -lFLAC"
+  fi
 else
-  extra_libs="$extra_libs -lshout -lmpg123"
+  extra_libs="$extra_libs -lshout -lmpg123 -lvorbisfile -lvorbis -logg -lFLAC"
 fi
 extra_libs="$extra_libs -lmp3lame"
 
@@ -88,9 +92,11 @@ LIBS="$LIBS $extra_libs"
 
 tmp_cxx=${TMPDIR:-/tmp}/modern-ices-conf.$$
 cat > "$tmp_cxx.cpp" <<'EOF'
-#include <shout/shout.h>
-#include <mpg123.h>
+#include <FLAC/stream_decoder.h>
 #include <lame/lame.h>
+#include <mpg123.h>
+#include <shout/shout.h>
+#include <vorbis/vorbisfile.h>
 int main() {
   shout_init();
   shout_shutdown();
@@ -99,12 +105,16 @@ int main() {
   if (mh) mpg123_delete(mh);
   auto *l = lame_init();
   if (l) lame_close(l);
+  OggVorbis_File vf{};
+  (void)vf;
+  auto *flac = FLAC__stream_decoder_new();
+  if (flac) FLAC__stream_decoder_delete(flac);
   return 0;
 }
 EOF
 
 if ! $CXX $CPPFLAGS $CXXFLAGS "$tmp_cxx.cpp" $LDFLAGS $LIBS -o "$tmp_cxx" >/dev/null 2>&1; then
-  echo "configure: error: unable to compile and link with libshout, libmpg123, and libmp3lame" >&2
+  echo "configure: error: unable to compile and link with libshout, libmpg123, libmp3lame, libvorbisfile, and libFLAC" >&2
   echo "configure: tried: $CXX $CPPFLAGS $CXXFLAGS $LDFLAGS $LIBS" >&2
   rm -f "$tmp_cxx.cpp" "$tmp_cxx"
   exit 1

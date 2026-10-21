@@ -1,5 +1,6 @@
 #include "Streamer.hpp"
 
+#include "AudioDecoder.hpp"
 #include "Error.hpp"
 #include "IcecastClient.hpp"
 #include "LameEncoder.hpp"
@@ -80,13 +81,13 @@ void Streamer::stream_passthrough(const std::string& path) {
 }
 
 void Streamer::stream_transcoded(const std::string& path) {
-  auto input = open_binary(path);
   IcecastClient client(config_);
   client.connect();
 
-  Mp3Decoder decoder;
+  auto decoder = open_audio_decoder(path);
   std::unique_ptr<LameEncoder> encoder;
-  std::array<unsigned char, 8192> input_buffer{};
+  long encoded_sample_rate = 0;
+  int encoded_channels = 0;
 
   auto send_pcm = [&](const PcmBlock& pcm) {
     if (pcm.empty()) {
@@ -94,7 +95,12 @@ void Streamer::stream_transcoded(const std::string& path) {
     }
     if (!encoder) {
       encoder = std::make_unique<LameEncoder>(pcm.sample_rate, pcm.channels, config_.bitrate_kbps);
+      encoded_sample_rate = pcm.sample_rate;
+      encoded_channels = pcm.channels;
+    } else if (pcm.sample_rate != encoded_sample_rate || pcm.channels != encoded_channels) {
+      throw Error("input stream changed audio format during transcoding");
     }
+
     auto encoded = encoder->encode(pcm);
     if (!encoded.empty()) {
       client.send(encoded.data(), encoded.size());
@@ -102,20 +108,8 @@ void Streamer::stream_transcoded(const std::string& path) {
     }
   };
 
-  while (input) {
-    input.read(reinterpret_cast<char*>(input_buffer.data()),
-               static_cast<std::streamsize>(input_buffer.size()));
-    const auto bytes = input.gcount();
-    if (bytes > 0) {
-      send_pcm(decoder.decode(input_buffer.data(), static_cast<std::size_t>(bytes)));
-    }
-  }
-  if (input.bad()) {
-    throw Error("read failed for input file: " + path);
-  }
-
   for (;;) {
-    auto pcm = decoder.drain();
+    auto pcm = decoder->read();
     if (pcm.empty()) {
       break;
     }

@@ -1,10 +1,13 @@
 # modern-ices
 
-`modern-ices` is a small C++23 reimplementation of the MP3 streaming core of
-ices 0.4. It keeps the practical dependency stack for MP3 streaming:
+`modern-ices` is a small C++23 reimplementation of the streaming and
+transcoding core of ices 0.4. It keeps the practical dependency stack used by
+that program:
 
 - libshout for Icecast/Shoutcast compatible output
 - libmpg123 for MP3 decoding when transcoding is enabled
+- libvorbisfile for Ogg Vorbis decoding when transcoding is enabled
+- libFLAC for FLAC decoding when transcoding is enabled
 - libmp3lame for MP3 encoding when transcoding is enabled
 
 The code is organized around RAII classes instead of global C state. Library
@@ -26,21 +29,28 @@ CPPFLAGS="-I/opt/ice/include" LDFLAGS="-L/opt/ice/lib" ./configure --prefix=/opt
 make
 ```
 
-## Run
-
-Create a playlist with one MP3 path per line:
+Equivalent explicit dependency prefixes are also supported:
 
 ```sh
-printf '%s\n' /path/to/file.mp3 > playlist.txt
+./configure --with-shout=/opt/ice --with-mpg123=/opt/ice --with-lame=/opt/ice \
+  --with-vorbis=/opt/ice --with-flac=/opt/ice
 ```
 
-Stream files without transcoding:
+## Run
+
+Create a playlist with one audio path per line:
+
+```sh
+printf '%s\n' /path/to/file.mp3 /path/to/file.ogg /path/to/file.flac > playlist.txt
+```
+
+Stream MP3 files without transcoding:
 
 ```sh
 modern-ices -F playlist.txt -h localhost -p 8000 -P hackme -m /stream
 ```
 
-Decode with mpg123 and re-encode with LAME at 128 kbps:
+Decode MP3, Ogg Vorbis, or FLAC and re-encode with LAME at 128 kbps:
 
 ```sh
 modern-ices -F playlist.txt -R -b 128

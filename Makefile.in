@@ -11,12 +11,15 @@ STD = -std=c++23
 
 TARGET = modern-ices
 SRCS = \
+	src/AudioDecoder.cpp \
 	src/Config.cpp \
+	src/FlacDecoder.cpp \
 	src/IcecastClient.cpp \
 	src/LameEncoder.cpp \
 	src/Mp3Decoder.cpp \
 	src/Playlist.cpp \
 	src/Streamer.cpp \
+	src/VorbisDecoder.cpp \
 	src/main.cpp
 OBJS = $(SRCS:.cpp=.o)
 DEPS = $(OBJS:.o=.d)
