@@ -8,6 +8,7 @@
 
 namespace modern_ices {
 
+// RAII wrapper around a LAME encoder configured from the first decoded PCM block.
 class LameEncoder {
   public:
     LameEncoder(long sample_rate, int channels, int bitrate_kbps);

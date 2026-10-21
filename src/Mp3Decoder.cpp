@@ -40,6 +40,7 @@ Mp3Decoder::~Mp3Decoder() {
     }
 }
 
+// Feed compressed bytes until mpg123 produces PCM; after file EOF, drain delayed frames.
 PcmBlock Mp3Decoder::read() {
     for (;;) {
         if (!input_done_) {
@@ -71,6 +72,7 @@ PcmBlock Mp3Decoder::read() {
     }
 }
 
+// Restrict mpg123 output to signed 16-bit mono/stereo so downstream code has one PCM shape.
 void Mp3Decoder::configure_formats() {
     if (mpg123_format_none(handle_) != MPG123_OK) {
         throw_decoder_error("clear output formats");
@@ -111,6 +113,7 @@ PcmBlock Mp3Decoder::drain() {
     return decode(nullptr, 0);
 }
 
+// mpg123 reports the concrete audio format only after it has parsed enough stream data.
 void Mp3Decoder::refresh_format() {
     if (mpg123_getformat(handle_, &sample_rate_, &channels_, &encoding_) != MPG123_OK) {
         throw_decoder_error("read decoder output format");
@@ -123,6 +126,7 @@ void Mp3Decoder::refresh_format() {
     }
 }
 
+// Split mpg123 interleaved output into left/right planes expected by lame_encode_buffer.
 PcmBlock Mp3Decoder::convert_pcm(const std::vector<std::int16_t>& interleaved,
                                  std::size_t bytes_done) const {
     if (bytes_done == 0) {

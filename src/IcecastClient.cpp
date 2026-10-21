@@ -31,6 +31,7 @@ ShoutRuntime::~ShoutRuntime() {
     shout_shutdown();
 }
 
+// Configure all connection and stream metadata before opening the source socket.
 IcecastClient::IcecastClient(const Config& config) : shout_{shout_new()} {
     if (!shout_) {
         throw Error("libshout failed to allocate a connection object");
@@ -79,6 +80,7 @@ void IcecastClient::send(const unsigned char* data, std::size_t length) {
     check(shout_send(shout_, data, length), "send stream data");
 }
 
+// Let libshout pace output so the server receives audio at stream rate.
 void IcecastClient::sync() noexcept {
     if (shout_) {
         shout_sync(shout_);

@@ -10,6 +10,7 @@
 namespace modern_ices {
 namespace {
 
+// vorbisfile can decode directly to floats; clamp before converting to 16-bit PCM.
 std::int16_t float_to_i16(float sample) {
     const float clipped{std::clamp(sample, -1.0F, 1.0F)};
     return static_cast<std::int16_t>(std::lrint(clipped * 32767.0F));
@@ -43,6 +44,7 @@ VorbisDecoder::~VorbisDecoder() {
     }
 }
 
+// Ogg can contain chained logical bitstreams, so validate the active section each read.
 PcmBlock VorbisDecoder::read() {
     constexpr int max_samples{4096};
 

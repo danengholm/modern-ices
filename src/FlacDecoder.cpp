@@ -9,6 +9,7 @@
 namespace modern_ices {
 namespace {
 
+// Preserve the high-order bits when reducing FLAC samples to the encoder's 16-bit input.
 std::int16_t flac_to_i16(FLAC__int32 sample, unsigned bits_per_sample) {
     std::int64_t value{sample};
     if (bits_per_sample > 16) {
@@ -56,6 +57,7 @@ FlacDecoder::~FlacDecoder() {
     }
 }
 
+// Process FLAC frames until a callback fills pending_ or the decoder reaches EOF.
 PcmBlock FlacDecoder::read() {
     if (!pending_.empty()) {
         return take_pending();
@@ -98,6 +100,7 @@ void FlacDecoder::set_callback_error(std::string message) {
     }
 }
 
+// Called by libFLAC with one decoded frame; convert it into the common PcmBlock shape.
 FLAC__StreamDecoderWriteStatus FlacDecoder::handle_write(const FLAC__Frame* frame,
                                                          const FLAC__int32* const buffer[]) {
     if (!frame || !buffer) {
@@ -141,6 +144,7 @@ FLAC__StreamDecoderWriteStatus FlacDecoder::handle_write(const FLAC__Frame* fram
     return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
 
+// Validate STREAMINFO early so unsupported FLAC layouts fail before streaming starts.
 void FlacDecoder::handle_metadata(const FLAC__StreamMetadata* metadata) {
     if (!metadata || metadata->type != FLAC__METADATA_TYPE_STREAMINFO) {
         return;

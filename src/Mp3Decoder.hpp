@@ -12,6 +12,7 @@
 
 namespace modern_ices {
 
+// mpg123 has process-global setup/teardown, kept separate from individual decoder handles.
 class Mpg123Runtime {
   public:
     Mpg123Runtime();
@@ -21,6 +22,7 @@ class Mpg123Runtime {
     Mpg123Runtime& operator=(const Mpg123Runtime&) = delete;
 };
 
+// Feed-style mpg123 decoder used when transcoding MP3 input to a new MP3 bitrate.
 class Mp3Decoder final : public PcmDecoder {
   public:
     explicit Mp3Decoder(std::string path);

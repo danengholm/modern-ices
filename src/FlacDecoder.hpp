@@ -7,6 +7,7 @@
 
 namespace modern_ices {
 
+// FLAC uses callbacks for decoded frames; pending_ stores the frame until read() returns it.
 class FlacDecoder final : public PcmDecoder {
   public:
     explicit FlacDecoder(const std::string& path);
@@ -20,6 +21,8 @@ class FlacDecoder final : public PcmDecoder {
   private:
     FLAC__StreamDecoder* decoder_{nullptr};
     PcmBlock pending_;
+    // FLAC callbacks cannot throw safely through the C API, so errors are captured and checked
+    // later.
     std::string callback_error_;
     std::string decoder_error_;
 

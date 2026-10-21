@@ -6,6 +6,7 @@
 
 namespace modern_ices {
 
+// Coordinates playlist iteration, source connections, optional decoding, and MP3 output.
 class Streamer {
   public:
     explicit Streamer(Config config);

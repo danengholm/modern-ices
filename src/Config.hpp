@@ -7,6 +7,7 @@ namespace modern_ices {
 
 enum class Protocol { Http, Icy };
 
+// Runtime settings parsed from the command line. Defaults mirror a local Icecast setup.
 struct Config {
     std::string playlist_path{"playlist.txt"};
     std::string host{"127.0.0.1"};

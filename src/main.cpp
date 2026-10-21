@@ -5,6 +5,7 @@
 
 #include <exception>
 
+// Keep top-level control flow small: parse, run, and translate failures into shell status.
 int main(int argc, char** argv) {
     try {
         auto config{modern_ices::Config::parse(argc, argv)};

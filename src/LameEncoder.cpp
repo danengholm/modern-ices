@@ -30,6 +30,7 @@ LameEncoder::~LameEncoder() {
     }
 }
 
+// LAME accepts separate left/right buffers, which matches the decoder-facing PcmBlock layout.
 std::vector<unsigned char> LameEncoder::encode(const PcmBlock& pcm) {
     if (pcm.empty()) {
         return {};

@@ -5,6 +5,7 @@
 
 namespace modern_ices {
 
+// Minimal stderr logger; Icecast source clients usually run under a service manager.
 class Logger {
   public:
     static void set_verbose(bool value) { verbose_ = value; }

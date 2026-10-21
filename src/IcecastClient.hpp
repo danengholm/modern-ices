@@ -8,6 +8,7 @@
 
 namespace modern_ices {
 
+// libshout also has process-global setup/teardown separate from per-connection state.
 class ShoutRuntime {
   public:
     ShoutRuntime();
@@ -17,6 +18,7 @@ class ShoutRuntime {
     ShoutRuntime& operator=(const ShoutRuntime&) = delete;
 };
 
+// Owns one source connection and turns libshout return codes into Error exceptions.
 class IcecastClient {
   public:
     explicit IcecastClient(const Config& config);

@@ -6,6 +6,7 @@
 
 namespace modern_ices {
 
+// In-memory playlist with wraparound iteration for continuous streaming mode.
 class Playlist {
   public:
     explicit Playlist(const std::string& path);

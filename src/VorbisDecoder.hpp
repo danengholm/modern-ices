@@ -4,6 +4,7 @@
 
 #include <string>
 
+// vorbisfile declares callback presets as static variables in the public header.
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -15,6 +16,7 @@
 
 namespace modern_ices {
 
+// Ogg Vorbis decoder built on vorbisfile; it emits normalized signed 16-bit PCM blocks.
 class VorbisDecoder final : public PcmDecoder {
   public:
     explicit VorbisDecoder(const std::string& path);

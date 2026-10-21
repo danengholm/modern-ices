@@ -28,6 +28,7 @@ std::ifstream open_binary(const std::string& path) {
 Streamer::Streamer(Config config) : config_{std::move(config)} {
 }
 
+// In continuous mode this loops forever; --once makes a single pass over the playlist.
 void Streamer::run() {
     ShoutRuntime shout_runtime{};
     std::unique_ptr<Mpg123Runtime> mpg123_runtime{};
@@ -68,6 +69,7 @@ void Streamer::stream_file(const std::string& path) {
     }
 }
 
+// Passthrough sends file bytes unchanged, so it is appropriate only for MP3 source files.
 void Streamer::stream_passthrough(const std::string& path) {
     auto input{open_binary(path)};
     IcecastClient client(config_);
@@ -88,6 +90,8 @@ void Streamer::stream_passthrough(const std::string& path) {
     }
 }
 
+// Transcoding opens a decoder based on input format, then lazily creates LAME after PCM format is
+// known.
 void Streamer::stream_transcoded(const std::string& path) {
     IcecastClient client(config_);
     client.connect();
@@ -97,6 +101,7 @@ void Streamer::stream_transcoded(const std::string& path) {
     long encoded_sample_rate{0};
     int encoded_channels{0};
 
+    // A single MP3 stream cannot change sample rate or channel count mid-file.
     auto send_pcm = [&](const PcmBlock& pcm) {
         if (pcm.empty()) {
             return;

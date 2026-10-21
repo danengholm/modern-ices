@@ -18,6 +18,7 @@ std::string trim(std::string line) {
 
 } // namespace
 
+// Blank lines and comments are ignored so simple hand-written playlists are convenient.
 Playlist::Playlist(const std::string& path) {
     std::ifstream in{path};
     if (!in) {

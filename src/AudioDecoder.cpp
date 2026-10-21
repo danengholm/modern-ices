@@ -14,6 +14,8 @@
 namespace modern_ices {
 namespace {
 
+// Only formats that can be transcoded to MP3 are modeled here. Passthrough mode does not use this
+// path.
 enum class AudioKind { Mp3, OggVorbis, Flac };
 
 std::string lowercase_extension(const std::string& path) {
@@ -29,6 +31,7 @@ std::string lowercase_extension(const std::string& path) {
     return extension;
 }
 
+// Prefer magic bytes over file names; extensions are only a fallback for short or unusual files.
 AudioKind detect_audio_kind(const std::string& path) {
     std::array<unsigned char, 12> header{};
     std::ifstream input{path, std::ios::binary};
@@ -56,6 +59,7 @@ AudioKind detect_audio_kind(const std::string& path) {
         return AudioKind::Mp3;
     }
 
+    // Unknown input falls back to MP3 so mpg123 can report a detailed decoder error.
     const auto extension{lowercase_extension(path)};
     if (extension == ".flac") {
         return AudioKind::Flac;

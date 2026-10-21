@@ -7,6 +7,7 @@
 
 namespace modern_ices {
 
+// Planar signed 16-bit PCM shared between decoders and the LAME encoder.
 struct PcmBlock {
     std::vector<std::int16_t> left;
     std::vector<std::int16_t> right;
@@ -17,6 +18,7 @@ struct PcmBlock {
     int samples() const { return static_cast<int>(left.size()); }
 };
 
+// Common pull interface for file decoders. Each read returns one block or an empty block at EOF.
 class PcmDecoder {
   public:
     virtual ~PcmDecoder() = default;
@@ -30,6 +32,7 @@ class PcmDecoder {
     PcmDecoder() = default;
 };
 
+// Opens the path, identifies the audio container/codec, and returns the matching decoder.
 std::unique_ptr<PcmDecoder> open_audio_decoder(const std::string& path);
 
 } // namespace modern_ices
