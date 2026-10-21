@@ -1,0 +1,44 @@
+prefix = @prefix@
+bindir = @bindir@
+CXX = @CXX@
+CXXFLAGS = @CXXFLAGS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+WARNFLAGS = -Wall -Wextra -Wpedantic
+STD = -std=c++23
+
+TARGET = modern-ices
+SRCS = \
+	src/Config.cpp \
+	src/IcecastClient.cpp \
+	src/LameEncoder.cpp \
+	src/Mp3Decoder.cpp \
+	src/Playlist.cpp \
+	src/Streamer.cpp \
+	src/main.cpp
+OBJS = $(SRCS:.cpp=.o)
+DEPS = $(OBJS:.o=.d)
+
+.PHONY: all clean install uninstall
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+
+%.o: %.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(WARNFLAGS) $(STD) -MMD -MP -c -o $@ $<
+
+install: $(TARGET)
+	mkdir -p "$(DESTDIR)$(bindir)"
+	install -m 0755 $(TARGET) "$(DESTDIR)$(bindir)/$(TARGET)"
+
+uninstall:
+	rm -f "$(DESTDIR)$(bindir)/$(TARGET)"
+
+clean:
+	rm -f $(TARGET) $(OBJS) $(DEPS)
+
+-include $(DEPS)

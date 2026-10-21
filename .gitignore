@@ -1,0 +1,6 @@
+/Makefile
+/config.mk
+/modern-ices
+/src/*.o
+/src/*.d
+/.deps/

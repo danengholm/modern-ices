@@ -1,0 +1,139 @@
+#!/bin/sh
+set -eu
+
+prefix=/usr/local
+bindir='${prefix}/bin'
+CXX=${CXX:-c++}
+CXXFLAGS=${CXXFLAGS:-"-O2 -g"}
+CPPFLAGS=${CPPFLAGS:-}
+LDFLAGS=${LDFLAGS:-}
+LIBS=${LIBS:-}
+extra_cppflags=
+extra_ldflags=
+extra_libs=
+
+usage() {
+  cat <<'EOF'
+Usage: ./configure [OPTIONS]
+
+Options:
+  --prefix=DIR          installation prefix [/usr/local]
+  --bindir=DIR          binary directory [PREFIX/bin]
+  --with-shout=DIR      libshout prefix
+  --with-mpg123=DIR     libmpg123 prefix
+  --with-lame=DIR       libmp3lame prefix
+  --enable-debug        add debug-friendly compiler flags
+  --help                show this help
+
+Environment:
+  CXX, CXXFLAGS, CPPFLAGS, LDFLAGS, LIBS are honored.
+EOF
+}
+
+for arg in "$@"; do
+  case "$arg" in
+    --prefix=*) prefix=${arg#*=} ;;
+    --bindir=*) bindir=${arg#*=} ;;
+    --with-shout=*)
+      d=${arg#*=}
+      extra_cppflags="$extra_cppflags -I$d/include"
+      extra_ldflags="$extra_ldflags -L$d/lib"
+      ;;
+    --with-mpg123=*)
+      d=${arg#*=}
+      extra_cppflags="$extra_cppflags -I$d/include"
+      extra_ldflags="$extra_ldflags -L$d/lib"
+      ;;
+    --with-lame=*)
+      d=${arg#*=}
+      extra_cppflags="$extra_cppflags -I$d/include"
+      extra_ldflags="$extra_ldflags -L$d/lib"
+      ;;
+    --enable-debug)
+      CXXFLAGS="-O0 -g3"
+      ;;
+    --help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "configure: unknown option: $arg" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if command -v pkg-config >/dev/null 2>&1; then
+  if pkg-config --exists shout; then
+    extra_cppflags="$extra_cppflags $(pkg-config --cflags shout)"
+    extra_libs="$extra_libs $(pkg-config --libs shout)"
+  else
+    extra_libs="$extra_libs -lshout"
+  fi
+  if pkg-config --exists libmpg123; then
+    extra_cppflags="$extra_cppflags $(pkg-config --cflags libmpg123)"
+    extra_libs="$extra_libs $(pkg-config --libs libmpg123)"
+  else
+    extra_libs="$extra_libs -lmpg123"
+  fi
+else
+  extra_libs="$extra_libs -lshout -lmpg123"
+fi
+extra_libs="$extra_libs -lmp3lame"
+
+CPPFLAGS="$CPPFLAGS $extra_cppflags"
+LDFLAGS="$LDFLAGS $extra_ldflags"
+LIBS="$LIBS $extra_libs"
+
+tmp_cxx=${TMPDIR:-/tmp}/modern-ices-conf.$$
+cat > "$tmp_cxx.cpp" <<'EOF'
+#include <shout/shout.h>
+#include <mpg123.h>
+#include <lame/lame.h>
+int main() {
+  shout_init();
+  shout_shutdown();
+  int err = MPG123_OK;
+  auto *mh = mpg123_new(nullptr, &err);
+  if (mh) mpg123_delete(mh);
+  auto *l = lame_init();
+  if (l) lame_close(l);
+  return 0;
+}
+EOF
+
+if ! $CXX $CPPFLAGS $CXXFLAGS "$tmp_cxx.cpp" $LDFLAGS $LIBS -o "$tmp_cxx" >/dev/null 2>&1; then
+  echo "configure: error: unable to compile and link with libshout, libmpg123, and libmp3lame" >&2
+  echo "configure: tried: $CXX $CPPFLAGS $CXXFLAGS $LDFLAGS $LIBS" >&2
+  rm -f "$tmp_cxx.cpp" "$tmp_cxx"
+  exit 1
+fi
+rm -f "$tmp_cxx.cpp" "$tmp_cxx"
+
+sed \
+  -e "s|@prefix@|$prefix|g" \
+  -e "s|@bindir@|$bindir|g" \
+  -e "s|@CXX@|$CXX|g" \
+  -e "s|@CXXFLAGS@|$CXXFLAGS|g" \
+  -e "s|@CPPFLAGS@|$CPPFLAGS|g" \
+  -e "s|@LDFLAGS@|$LDFLAGS|g" \
+  -e "s|@LIBS@|$LIBS|g" \
+  Makefile.in > Makefile
+
+cat > config.mk <<EOF
+prefix=$prefix
+bindir=$bindir
+CXX=$CXX
+CXXFLAGS=$CXXFLAGS
+CPPFLAGS=$CPPFLAGS
+LDFLAGS=$LDFLAGS
+LIBS=$LIBS
+EOF
+
+echo "Configured modern-ices"
+echo "  prefix:   $prefix"
+echo "  compiler: $CXX"
+echo "  cppflags: $CPPFLAGS"
+echo "  ldflags:  $LDFLAGS"
+echo "  libs:     $LIBS"
