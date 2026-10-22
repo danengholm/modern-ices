@@ -14,6 +14,20 @@ The code is organized around RAII classes instead of global C state. Library
 calls are checked and converted into exceptions that are reported cleanly by
 `main()`.
 
+## Original Project Credit
+
+`modern-ices` is a derivative work inspired by and based on the design of the
+original IceS/ices 0.x source client from the Xiph.Org Icecast project. The
+original ices 0.x program provided the MP3-oriented Icecast source-client model,
+playlist-driven streaming, transcoding support, and crossfade behavior that this
+project reimplements in modern C++.
+
+The historical ices0 source tree is kept by Xiph for reference:
+
+```text
+http://svn.xiph.org/icecast/trunk/ices0/
+```
+
 ## Build
 
 ```sh
