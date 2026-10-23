@@ -1,6 +1,7 @@
 #include "VorbisDecoder.hpp"
 
 #include "Error.hpp"
+#include "TrackMetadata.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -24,6 +25,8 @@ VorbisDecoder::VorbisDecoder(const std::string& path) {
         throw Error("unable to open Ogg Vorbis input file " + path + ": " + error_name(rc));
     }
     opened_ = true;
+    metadata_.fallback = metadata_fallback_from_path(path);
+    read_comments();
 
     const vorbis_info* info{ov_info(&file_, -1)};
     if (!info) {
@@ -35,6 +38,23 @@ VorbisDecoder::VorbisDecoder(const std::string& path) {
     }
     if (info->rate <= 0) {
         throw Error("Ogg Vorbis stream has invalid sample rate");
+    }
+}
+
+const TrackMetadata& VorbisDecoder::metadata() const {
+    return metadata_;
+}
+
+void VorbisDecoder::read_comments() {
+    const auto* comments{ov_comment(&file_, -1)};
+    if (!comments) {
+        return;
+    }
+    for (int i{0}; i < comments->comments; ++i) {
+        if (comments->user_comments[i] && comments->comment_lengths[i] > 0) {
+            apply_vorbis_comment(metadata_, std::string_view(comments->user_comments[i],
+                                                             comments->comment_lengths[i]));
+        }
     }
 }
 

@@ -32,6 +32,7 @@ class Mp3Decoder final : public PcmDecoder {
     Mp3Decoder& operator=(const Mp3Decoder&) = delete;
 
     PcmBlock read() override;
+    const TrackMetadata& metadata() const override;
 
   private:
     std::ifstream input_;
@@ -42,9 +43,12 @@ class Mp3Decoder final : public PcmDecoder {
     int encoding_{0};
     bool input_done_{false};
     bool decoder_drained_{false};
+    TrackMetadata metadata_;
+    std::vector<unsigned char> metadata_probe_;
 
     PcmBlock decode(const unsigned char* data, std::size_t length);
     PcmBlock drain();
+    void observe_metadata_bytes(const unsigned char* data, std::size_t length);
     void configure_formats();
     void refresh_format();
     PcmBlock convert_pcm(const std::vector<std::int16_t>& interleaved,

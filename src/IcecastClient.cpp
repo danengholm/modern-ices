@@ -2,6 +2,7 @@
 
 #include "Error.hpp"
 
+#include <memory>
 #include <sstream>
 
 namespace modern_ices {
@@ -78,6 +79,19 @@ void IcecastClient::send(const unsigned char* data, std::size_t length) {
         return;
     }
     check(shout_send(shout_, data, length), "send stream data");
+}
+
+void IcecastClient::set_stream_title(const std::string& title) {
+    shout_metadata_t* metadata{shout_metadata_new()};
+    if (!metadata) {
+        throw Error("libshout failed to allocate stream metadata");
+    }
+    const auto guard{std::unique_ptr<shout_metadata_t, decltype(&shout_metadata_free)>(
+        metadata, &shout_metadata_free)};
+    if (shout_metadata_add(metadata, "song", title.c_str()) != SHOUTERR_SUCCESS) {
+        throw Error("libshout failed to add StreamTitle metadata");
+    }
+    check(shout_set_metadata_utf8(shout_, metadata), "set StreamTitle metadata");
 }
 
 // Let libshout pace output so the server receives audio at stream rate.
