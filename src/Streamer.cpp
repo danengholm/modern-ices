@@ -141,7 +141,6 @@ void Streamer::stream_transcoded(const std::string& path) {
     IcecastClient client(config_);
     client.connect();
     std::string current_title;
-    update_stream_title(client, decoder->metadata(), current_title);
 
     std::unique_ptr<LameEncoder> encoder{};
     long encoded_sample_rate{0};
@@ -238,7 +237,6 @@ void Streamer::stream_crossfaded(Playlist& playlist) {
             Logger::info("Playing " + path);
             auto decoder{open_audio_decoder(path)};
             std::string current_title;
-            update_stream_title(client, decoder->metadata(), current_title);
             bool started{false};
             for (;;) {
                 auto pcm{decoder->read()};
