@@ -1,10 +1,12 @@
 #include "FlacDecoder.hpp"
 
 #include "Error.hpp"
+#include "TrackMetadata.hpp"
 
 #include <algorithm>
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 namespace modern_ices {
 namespace {
@@ -28,9 +30,16 @@ std::string decoder_state_name(FLAC__StreamDecoderState state) {
 } // namespace
 
 FlacDecoder::FlacDecoder(const std::string& path) {
+    metadata_.fallback = metadata_fallback_from_path(path);
+
     decoder_ = FLAC__stream_decoder_new();
     if (!decoder_) {
         throw Error("unable to allocate FLAC decoder");
+    }
+    if (!FLAC__stream_decoder_set_metadata_respond(decoder_, FLAC__METADATA_TYPE_VORBIS_COMMENT)) {
+        FLAC__stream_decoder_delete(decoder_);
+        decoder_ = nullptr;
+        throw Error("unable to request FLAC Vorbis comment metadata");
     }
 
     const auto init = FLAC__stream_decoder_init_file(decoder_, path.c_str(), write_callback,
@@ -48,6 +57,10 @@ FlacDecoder::FlacDecoder(const std::string& path) {
                     decoder_state_name(FLAC__stream_decoder_get_state(decoder_)));
     }
     check_callback_error();
+}
+
+const TrackMetadata& FlacDecoder::metadata() const {
+    return metadata_;
 }
 
 FlacDecoder::~FlacDecoder() {
@@ -146,7 +159,22 @@ FLAC__StreamDecoderWriteStatus FlacDecoder::handle_write(const FLAC__Frame* fram
 
 // Validate STREAMINFO early so unsupported FLAC layouts fail before streaming starts.
 void FlacDecoder::handle_metadata(const FLAC__StreamMetadata* metadata) {
-    if (!metadata || metadata->type != FLAC__METADATA_TYPE_STREAMINFO) {
+    if (!metadata) {
+        return;
+    }
+
+    if (metadata->type == FLAC__METADATA_TYPE_VORBIS_COMMENT) {
+        const auto& vorbis_comments{metadata->data.vorbis_comment};
+        for (FLAC__uint32 i{0}; i < vorbis_comments.num_comments; ++i) {
+            const auto& entry{vorbis_comments.comments[i]};
+            apply_vorbis_comment(
+                metadata_,
+                std::string_view(reinterpret_cast<const char*>(entry.entry), entry.length));
+        }
+        return;
+    }
+
+    if (metadata->type != FLAC__METADATA_TYPE_STREAMINFO) {
         return;
     }
     const auto& stream_info = metadata->data.stream_info;

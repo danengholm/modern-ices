@@ -17,6 +17,7 @@ class FlacDecoder final : public PcmDecoder {
     FlacDecoder& operator=(const FlacDecoder&) = delete;
 
     PcmBlock read() override;
+    const TrackMetadata& metadata() const override;
 
   private:
     FLAC__StreamDecoder* decoder_{nullptr};
@@ -25,6 +26,7 @@ class FlacDecoder final : public PcmDecoder {
     // later.
     std::string callback_error_;
     std::string decoder_error_;
+    TrackMetadata metadata_;
 
     PcmBlock take_pending();
     void set_callback_error(std::string message);

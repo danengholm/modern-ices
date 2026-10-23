@@ -26,12 +26,15 @@ class VorbisDecoder final : public PcmDecoder {
     VorbisDecoder& operator=(const VorbisDecoder&) = delete;
 
     PcmBlock read() override;
+    const TrackMetadata& metadata() const override;
 
   private:
     OggVorbis_File file_{};
     bool opened_{false};
     int current_section_{0};
+    TrackMetadata metadata_;
 
+    void read_comments();
     static const char* error_name(long rc);
 };
 

@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
-#include <fstream>
 #include <string>
 
 namespace modern_ices {
@@ -31,35 +30,7 @@ std::string lowercase_extension(const std::string& path) {
     return extension;
 }
 
-// Prefer magic bytes over file names; extensions are only a fallback for short or unusual files.
 AudioKind detect_audio_kind(const std::string& path) {
-    std::array<unsigned char, 12> header{};
-    std::ifstream input{path, std::ios::binary};
-    if (!input) {
-        throw Error("unable to open input file: " + path);
-    }
-    input.read(reinterpret_cast<char*>(header.data()), static_cast<std::streamsize>(header.size()));
-    const auto bytes{input.gcount()};
-    if (input.bad()) {
-        throw Error("unable to read input file header: " + path);
-    }
-
-    if (bytes >= 4 && header[0] == 'f' && header[1] == 'L' && header[2] == 'a' &&
-        header[3] == 'C') {
-        return AudioKind::Flac;
-    }
-    if (bytes >= 4 && header[0] == 'O' && header[1] == 'g' && header[2] == 'g' &&
-        header[3] == 'S') {
-        return AudioKind::OggVorbis;
-    }
-    if (bytes >= 3 && header[0] == 'I' && header[1] == 'D' && header[2] == '3') {
-        return AudioKind::Mp3;
-    }
-    if (bytes >= 2 && header[0] == 0xff && (header[1] & 0xe0) == 0xe0) {
-        return AudioKind::Mp3;
-    }
-
-    // Unknown input falls back to MP3 so mpg123 can report a detailed decoder error.
     const auto extension{lowercase_extension(path)};
     if (extension == ".flac") {
         return AudioKind::Flac;
@@ -67,6 +38,7 @@ AudioKind detect_audio_kind(const std::string& path) {
     if (extension == ".ogg" || extension == ".oga") {
         return AudioKind::OggVorbis;
     }
+    // Unknown input falls back to MP3 so mpg123 can report a detailed decoder error.
     return AudioKind::Mp3;
 }
 

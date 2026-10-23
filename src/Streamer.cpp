@@ -11,8 +11,11 @@
 #include "TrackMetadata.hpp"
 
 #include <array>
+#include <cstddef>
 #include <fstream>
 #include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace modern_ices {
@@ -26,9 +29,14 @@ std::ifstream open_binary(const std::string& path) {
     return input;
 }
 
-void update_stream_title(IcecastClient& client, const std::string& path) {
-    const auto title{read_track_metadata(path).stream_title()};
+void update_stream_title(IcecastClient& client, const TrackMetadata& metadata,
+                         std::string& current_title) {
+    const auto title{metadata.stream_title()};
+    if (title.empty() || title == current_title) {
+        return;
+    }
     client.set_stream_title(title);
+    current_title = title;
     Logger::debug("Updated StreamTitle to: " + title);
 }
 
@@ -90,7 +98,11 @@ void Streamer::stream_passthrough(const std::string& path) {
     auto input{open_binary(path)};
     IcecastClient client(config_);
     client.connect();
-    update_stream_title(client, path);
+    TrackMetadata metadata{};
+    metadata.fallback = metadata_fallback_from_path(path);
+    std::vector<unsigned char> metadata_probe;
+    std::string current_title;
+    constexpr std::size_t max_metadata_probe_bytes{65536};
 
     std::array<unsigned char, 16384> buffer{};
     while (input) {
@@ -98,6 +110,21 @@ void Streamer::stream_passthrough(const std::string& path) {
                    static_cast<std::streamsize>(buffer.size()));
         const auto bytes{input.gcount()};
         if (bytes > 0) {
+            if (metadata.artist.empty() || metadata.title.empty()) {
+                const auto probe_room{max_metadata_probe_bytes -
+                                      std::min(metadata_probe.size(), max_metadata_probe_bytes)};
+                const auto probe_bytes{std::min(static_cast<std::size_t>(bytes), probe_room)};
+                metadata_probe.insert(metadata_probe.end(), buffer.data(),
+                                      buffer.data() + probe_bytes);
+                auto parsed{read_mp3_metadata(metadata_probe)};
+                if (!parsed.artist.empty()) {
+                    metadata.artist = std::move(parsed.artist);
+                }
+                if (!parsed.title.empty()) {
+                    metadata.title = std::move(parsed.title);
+                }
+            }
+            update_stream_title(client, metadata, current_title);
             client.send(buffer.data(), static_cast<std::size_t>(bytes));
             client.sync();
         }
@@ -110,11 +137,12 @@ void Streamer::stream_passthrough(const std::string& path) {
 // Transcoding opens a decoder based on input format, then lazily creates LAME after PCM format is
 // known.
 void Streamer::stream_transcoded(const std::string& path) {
+    auto decoder{open_audio_decoder(path)};
     IcecastClient client(config_);
     client.connect();
-    update_stream_title(client, path);
+    std::string current_title;
+    update_stream_title(client, decoder->metadata(), current_title);
 
-    auto decoder{open_audio_decoder(path)};
     std::unique_ptr<LameEncoder> encoder{};
     long encoded_sample_rate{0};
     int encoded_channels{0};
@@ -142,6 +170,7 @@ void Streamer::stream_transcoded(const std::string& path) {
 
     for (;;) {
         auto pcm{decoder->read()};
+        update_stream_title(client, decoder->metadata(), current_title);
         if (pcm.empty()) {
             break;
         }
@@ -207,11 +236,13 @@ void Streamer::stream_crossfaded(Playlist& playlist) {
         ++attempts;
         try {
             Logger::info("Playing " + path);
-            update_stream_title(client, path);
             auto decoder{open_audio_decoder(path)};
+            std::string current_title;
+            update_stream_title(client, decoder->metadata(), current_title);
             bool started{false};
             for (;;) {
                 auto pcm{decoder->read()};
+                update_stream_title(client, decoder->metadata(), current_title);
                 if (pcm.empty()) {
                     break;
                 }

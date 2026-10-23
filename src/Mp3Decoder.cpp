@@ -1,7 +1,10 @@
 #include "Mp3Decoder.hpp"
 
 #include "Error.hpp"
+#include "TrackMetadata.hpp"
 
+#include <algorithm>
+#include <cstddef>
 #include <string>
 
 namespace modern_ices {
@@ -31,6 +34,7 @@ Mp3Decoder::Mp3Decoder(std::string path) : input_{path, std::ios::binary} {
     if (mpg123_open_feed(handle_) != MPG123_OK) {
         throw_decoder_error("open feed decoder");
     }
+    metadata_.fallback = metadata_fallback_from_path(path);
 }
 
 Mp3Decoder::~Mp3Decoder() {
@@ -48,6 +52,7 @@ PcmBlock Mp3Decoder::read() {
                         static_cast<std::streamsize>(input_buffer_.size()));
             const auto bytes{input_.gcount()};
             if (bytes > 0) {
+                observe_metadata_bytes(input_buffer_.data(), static_cast<std::size_t>(bytes));
                 auto block{decode(input_buffer_.data(), static_cast<std::size_t>(bytes))};
                 if (!block.empty()) {
                     return block;
@@ -69,6 +74,29 @@ PcmBlock Mp3Decoder::read() {
         }
 
         return {};
+    }
+}
+
+const TrackMetadata& Mp3Decoder::metadata() const {
+    return metadata_;
+}
+
+void Mp3Decoder::observe_metadata_bytes(const unsigned char* data, std::size_t length) {
+    constexpr std::size_t max_probe_bytes{65536};
+    if (!metadata_.artist.empty() && !metadata_.title.empty()) {
+        return;
+    }
+
+    const auto remaining{max_probe_bytes - std::min(metadata_probe_.size(), max_probe_bytes)};
+    const auto copy_bytes{std::min(length, remaining)};
+    metadata_probe_.insert(metadata_probe_.end(), data, data + copy_bytes);
+
+    auto parsed{read_mp3_metadata(metadata_probe_)};
+    if (!parsed.artist.empty()) {
+        metadata_.artist = std::move(parsed.artist);
+    }
+    if (!parsed.title.empty()) {
+        metadata_.title = std::move(parsed.title);
     }
 }
 

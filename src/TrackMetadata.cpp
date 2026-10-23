@@ -1,33 +1,15 @@
 #include "TrackMetadata.hpp"
 
-#include "Error.hpp"
-
-#include <FLAC/metadata.h>
-
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <cstddef>
 #include <cstdint>
-#include <fstream>
-#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#endif
-#include <vorbis/vorbisfile.h>
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
-
 namespace modern_ices {
 namespace {
-
-enum class AudioKind { Mp3, OggVorbis, Flac };
 
 std::string trim(std::string value) {
     if (const auto nul{value.find('\0')}; nul != std::string::npos) {
@@ -37,77 +19,6 @@ std::string trim(std::string value) {
     value.erase(value.begin(), std::find_if(value.begin(), value.end(), not_space));
     value.erase(std::find_if(value.rbegin(), value.rend(), not_space).base(), value.end());
     return value;
-}
-
-std::string lowercase(std::string value) {
-    std::transform(value.begin(), value.end(), value.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return value;
-}
-
-std::string clean_filename(const std::string& path) {
-    const auto slash{path.find_last_of("/\\")};
-    const auto start{slash == std::string::npos ? 0 : slash + 1};
-    auto name{path.substr(start)};
-    const auto dot{name.find_last_of('.')};
-    if (dot != std::string::npos) {
-        name.erase(dot);
-    }
-    return name.empty() ? path : name;
-}
-
-std::string lowercase_extension(const std::string& path) {
-    const auto slash{path.find_last_of("/\\")};
-    const auto dot{path.find_last_of('.')};
-    if (dot == std::string::npos || (slash != std::string::npos && dot < slash)) {
-        return {};
-    }
-    return lowercase(path.substr(dot));
-}
-
-std::vector<unsigned char> read_file(const std::string& path) {
-    std::ifstream input{path, std::ios::binary};
-    if (!input) {
-        throw Error("unable to open input file for metadata: " + path);
-    }
-    input.seekg(0, std::ios::end);
-    const auto end{input.tellg()};
-    if (end < 0) {
-        throw Error("unable to size input file for metadata: " + path);
-    }
-    input.seekg(0, std::ios::beg);
-    std::vector<unsigned char> data(static_cast<std::size_t>(end));
-    if (!data.empty()) {
-        input.read(reinterpret_cast<char*>(data.data()), static_cast<std::streamsize>(data.size()));
-        if (!input) {
-            throw Error("unable to read input file for metadata: " + path);
-        }
-    }
-    return data;
-}
-
-AudioKind detect_audio_kind(const std::string& path, const std::vector<unsigned char>& data) {
-    if (data.size() >= 4 && data[0] == 'f' && data[1] == 'L' && data[2] == 'a' && data[3] == 'C') {
-        return AudioKind::Flac;
-    }
-    if (data.size() >= 4 && data[0] == 'O' && data[1] == 'g' && data[2] == 'g' && data[3] == 'S') {
-        return AudioKind::OggVorbis;
-    }
-    if (data.size() >= 3 && data[0] == 'I' && data[1] == 'D' && data[2] == '3') {
-        return AudioKind::Mp3;
-    }
-    if (data.size() >= 2 && data[0] == 0xff && (data[1] & 0xe0) == 0xe0) {
-        return AudioKind::Mp3;
-    }
-
-    const auto extension{lowercase_extension(path)};
-    if (extension == ".flac") {
-        return AudioKind::Flac;
-    }
-    if (extension == ".ogg" || extension == ".oga") {
-        return AudioKind::OggVorbis;
-    }
-    return AudioKind::Mp3;
 }
 
 bool starts_with_ci(std::string_view value, std::string_view prefix) {
@@ -121,16 +32,6 @@ bool starts_with_ci(std::string_view value, std::string_view prefix) {
         }
     }
     return true;
-}
-
-void apply_vorbis_comment(TrackMetadata& metadata, std::string_view comment) {
-    // Match complete Vorbis comment keys, including the '='. This preserves the pkgsrc fixes that
-    // avoid treating keys such as ARTISTSORT as ARTIST.
-    if (starts_with_ci(comment, "artist=")) {
-        metadata.artist = trim(std::string(comment.substr(7)));
-    } else if (starts_with_ci(comment, "title=")) {
-        metadata.title = trim(std::string(comment.substr(6)));
-    }
 }
 
 std::uint32_t synchsafe32(const unsigned char* data) {
@@ -252,48 +153,6 @@ void read_id3v2(TrackMetadata& metadata, const std::vector<unsigned char>& data)
     }
 }
 
-TrackMetadata read_mp3_metadata(const std::vector<unsigned char>& data) {
-    TrackMetadata metadata;
-    read_id3v1(metadata, data);
-    read_id3v2(metadata, data);
-    return metadata;
-}
-
-TrackMetadata read_ogg_vorbis_metadata(const std::string& path) {
-    TrackMetadata metadata;
-    OggVorbis_File file{};
-    const auto rc{ov_fopen(path.c_str(), &file)};
-    if (rc != 0) {
-        return metadata;
-    }
-    const auto guard{std::unique_ptr<OggVorbis_File, decltype(&ov_clear)>(&file, &ov_clear)};
-    const auto* comments{ov_comment(&file, -1)};
-    if (!comments) {
-        return metadata;
-    }
-    for (int i{0}; i < comments->comments; ++i) {
-        apply_vorbis_comment(metadata, comments->user_comments[i]);
-    }
-    return metadata;
-}
-
-TrackMetadata read_flac_metadata(const std::string& path) {
-    TrackMetadata metadata;
-    FLAC__StreamMetadata* comments{nullptr};
-    if (!FLAC__metadata_get_tags(path.c_str(), &comments) || !comments) {
-        return metadata;
-    }
-    const auto guard{std::unique_ptr<FLAC__StreamMetadata, decltype(&FLAC__metadata_object_delete)>(
-        comments, &FLAC__metadata_object_delete)};
-    const auto& vorbis_comments{comments->data.vorbis_comment};
-    for (FLAC__uint32 i{0}; i < vorbis_comments.num_comments; ++i) {
-        const auto& entry{vorbis_comments.comments[i]};
-        apply_vorbis_comment(
-            metadata, std::string_view(reinterpret_cast<const char*>(entry.entry), entry.length));
-    }
-    return metadata;
-}
-
 } // namespace
 
 std::string TrackMetadata::stream_title() const {
@@ -306,20 +165,31 @@ std::string TrackMetadata::stream_title() const {
     return fallback;
 }
 
-TrackMetadata read_track_metadata(const std::string& path) {
-    const auto data{read_file(path)};
-    auto metadata{[&]() {
-        switch (detect_audio_kind(path, data)) {
-        case AudioKind::Flac:
-            return read_flac_metadata(path);
-        case AudioKind::OggVorbis:
-            return read_ogg_vorbis_metadata(path);
-        case AudioKind::Mp3:
-            return read_mp3_metadata(data);
-        }
-        return TrackMetadata{};
-    }()};
-    metadata.fallback = clean_filename(path);
+std::string metadata_fallback_from_path(const std::string& path) {
+    const auto slash{path.find_last_of("/\\")};
+    const auto start{slash == std::string::npos ? 0 : slash + 1};
+    auto name{path.substr(start)};
+    const auto dot{name.find_last_of('.')};
+    if (dot != std::string::npos) {
+        name.erase(dot);
+    }
+    return name.empty() ? path : name;
+}
+
+void apply_vorbis_comment(TrackMetadata& metadata, std::string_view comment) {
+    // Match complete Vorbis comment keys, including the '='. This preserves the pkgsrc fixes that
+    // avoid treating keys such as ARTISTSORT as ARTIST.
+    if (starts_with_ci(comment, "artist=")) {
+        metadata.artist = trim(std::string(comment.substr(7)));
+    } else if (starts_with_ci(comment, "title=")) {
+        metadata.title = trim(std::string(comment.substr(6)));
+    }
+}
+
+TrackMetadata read_mp3_metadata(const std::vector<unsigned char>& data) {
+    TrackMetadata metadata{};
+    read_id3v1(metadata, data);
+    read_id3v2(metadata, data);
     return metadata;
 }
 

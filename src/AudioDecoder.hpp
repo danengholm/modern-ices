@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "TrackMetadata.hpp"
+
 namespace modern_ices {
 
 // Planar signed 16-bit PCM shared between decoders and the LAME encoder.
@@ -27,6 +29,7 @@ class PcmDecoder {
     PcmDecoder& operator=(const PcmDecoder&) = delete;
 
     virtual PcmBlock read() = 0;
+    virtual const TrackMetadata& metadata() const = 0;
 
   protected:
     PcmDecoder() = default;
