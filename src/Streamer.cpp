@@ -8,6 +8,7 @@
 #include "Logger.hpp"
 #include "Mp3Decoder.hpp"
 #include "Playlist.hpp"
+#include "TrackMetadata.hpp"
 
 #include <array>
 #include <fstream>
@@ -23,6 +24,12 @@ std::ifstream open_binary(const std::string& path) {
         throw Error("unable to open input file: " + path);
     }
     return input;
+}
+
+void update_stream_title(IcecastClient& client, const std::string& path) {
+    const auto title{read_track_metadata(path).stream_title()};
+    client.set_stream_title(title);
+    Logger::debug("Updated StreamTitle to: " + title);
 }
 
 } // namespace
@@ -83,6 +90,7 @@ void Streamer::stream_passthrough(const std::string& path) {
     auto input{open_binary(path)};
     IcecastClient client(config_);
     client.connect();
+    update_stream_title(client, path);
 
     std::array<unsigned char, 16384> buffer{};
     while (input) {
@@ -104,6 +112,7 @@ void Streamer::stream_passthrough(const std::string& path) {
 void Streamer::stream_transcoded(const std::string& path) {
     IcecastClient client(config_);
     client.connect();
+    update_stream_title(client, path);
 
     auto decoder{open_audio_decoder(path)};
     std::unique_ptr<LameEncoder> encoder{};
@@ -198,6 +207,7 @@ void Streamer::stream_crossfaded(Playlist& playlist) {
         ++attempts;
         try {
             Logger::info("Playing " + path);
+            update_stream_title(client, path);
             auto decoder{open_audio_decoder(path)};
             bool started{false};
             for (;;) {

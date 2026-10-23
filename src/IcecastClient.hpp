@@ -30,6 +30,7 @@ class IcecastClient {
     void connect();
     void close() noexcept;
     void send(const unsigned char* data, std::size_t length);
+    void set_stream_title(const std::string& title);
     void sync() noexcept;
 
   private:

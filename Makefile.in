@@ -20,6 +20,7 @@ SRCS = \
 	src/Mp3Decoder.cpp \
 	src/Playlist.cpp \
 	src/Streamer.cpp \
+	src/TrackMetadata.cpp \
 	src/VorbisDecoder.cpp \
 	src/main.cpp
 OBJS = $(SRCS:.cpp=.o)
