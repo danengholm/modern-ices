@@ -25,6 +25,8 @@ struct Config {
     bool reencode{false};
     bool once{false};
     bool verbose{false};
+    bool log_timestamps{false};
+    std::string log_timestamp_format{"%G"};
 
     static Config parse(int argc, char** argv);
     static void print_usage(const char* argv0);

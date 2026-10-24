@@ -17,6 +17,20 @@ std::string require_value(int& index, int argc, char** argv, std::string_view op
     return argv[++index];
 }
 
+std::string optional_value(int& index, int argc, char** argv, std::string_view default_value) {
+    if (index + 1 >= argc) {
+        return std::string(default_value);
+    }
+
+    std::string_view next{argv[index + 1]};
+    if (!next.empty() && next.front() == '-') {
+        return std::string(default_value);
+    }
+
+    ++index;
+    return std::string(next);
+}
+
 int parse_int(const std::string& value, std::string_view option, int min, int max) {
     int result{0};
     const char* begin{value.data()};
@@ -58,6 +72,8 @@ void Config::print_usage(const char* argv0) {
         << "  -x, --crossfade SECONDS  crossfade length; requires --reencode [0]\n"
         << "  -R, --reencode           decode MP3, Ogg Vorbis, or FLAC and re-encode to bitrate\n"
         << "      --once               stream each playlist entry once, then exit\n"
+        << "  -s[FORMAT], --timestamp[=FORMAT]\n"
+        << "                           prepend strftime timestamps to log messages [%c]\n"
         << "  -v, --verbose            verbose logging\n"
         << "      --help               show this help\n";
 }
@@ -98,6 +114,18 @@ Config Config::parse(int argc, char** argv) {
             config.reencode = true;
         } else if (arg == "--once") {
             config.once = true;
+        } else if (arg == "-s" || arg == "--timestamp") {
+            config.log_timestamps = true;
+            config.log_timestamp_format = optional_value(i, argc, argv, "%c");
+        } else if (arg.starts_with("-s") && arg.size() > 2) {
+            config.log_timestamps = true;
+            config.log_timestamp_format = std::string(arg.substr(2));
+        } else if (arg.starts_with("--timestamp=")) {
+            config.log_timestamps = true;
+            config.log_timestamp_format = std::string(arg.substr(12));
+        } else if (arg == "--timestamp-format") {
+            config.log_timestamps = true;
+            config.log_timestamp_format = require_value(i, argc, argv, arg);
         } else if (arg == "-v" || arg == "--verbose") {
             config.verbose = true;
         } else if (arg == "--help") {

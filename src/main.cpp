@@ -10,6 +10,8 @@ int main(int argc, char** argv) {
     try {
         auto config{modern_ices::Config::parse(argc, argv)};
         modern_ices::Logger::set_verbose(config.verbose);
+        modern_ices::Logger::set_timestamp_format(config.log_timestamps,
+                                                  config.log_timestamp_format);
         modern_ices::Streamer streamer(std::move(config));
         streamer.run();
         return 0;
