@@ -1,0 +1,54 @@
+modern-ices Release Notes
+=========================
+
+0.2
+---
+
+This release builds on the initial 0.1 prerelease with user-facing playback,
+logging, and documentation improvements.
+
+Playback and streaming:
+
+- Restored Icecast StreamTitle updates using source metadata, matching the
+  behavior expected from ices 0.4.
+- Read MP3 ID3 metadata, Ogg Vorbis comments, and FLAC Vorbis comments.
+- Avoided reopening input files solely for metadata; metadata is now taken from
+  the decoder or streaming path already being used for playback.
+- Preserved the pkgsrc fixes for Vorbis comment parsing by matching complete
+  `artist=` and `title=` keys instead of loose prefixes.
+- Added `-r` / `--randomize` to shuffle playlist order once at startup, similar
+  to the original ices playlist randomizer.
+- Added optional log timestamps with `-s` / `--timestamp`, including custom
+  `strftime` formats.
+
+Documentation and packaging support:
+
+- Added build dependency documentation for Debian-family systems and Fedora.
+- Documented which libraries correspond to the `--with-*` configure options.
+- Added a `modern-ices(1)` manual page.
+- Added `--mandir` support and man page installation to the build system.
+
+0.1
+---
+
+This was the first tagged prerelease of modern-ices.
+
+Core functionality:
+
+- Created a C++23 reimplementation of the streaming and transcoding core of
+  ices 0.4.
+- Added a simple configure script and GNU Make build.
+- Streamed MP3 input directly to Icecast-compatible servers.
+- Added transcoding support through libmpg123, libvorbisfile, libFLAC, and
+  libmp3lame.
+- Added MP3, Ogg Vorbis, and FLAC decoders for re-encoded playback.
+- Added playlist-driven operation with `--once` support.
+- Added crossfade support for transcoded playback.
+- Reported library and runtime failures as clean errors instead of crashing.
+
+Project process and attribution:
+
+- Added source comments explaining the decoder and streaming structure.
+- Documented the collaborative development process.
+- Added credit for the original IceS/ices 0.x project and its source location.
+- Added the `VERSION` file.
