@@ -23,6 +23,7 @@ struct Config {
     int bitrate_kbps{128};
     int crossfade_seconds{0};
     bool reencode{false};
+    bool randomize_playlist{false};
     bool once{false};
     bool verbose{false};
     bool log_timestamps{false};

@@ -56,7 +56,7 @@ void Streamer::run() {
         throw Error("crossfade requires --reencode");
     }
 
-    Playlist playlist(config_.playlist_path);
+    Playlist playlist(config_.playlist_path, config_.randomize_playlist);
     Logger::info("Loaded " + std::to_string(playlist.size()) + " playlist entries");
     if (config_.crossfade_seconds > 0) {
         stream_crossfaded(playlist);

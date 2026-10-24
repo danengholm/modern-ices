@@ -70,6 +70,12 @@ Decode MP3, Ogg Vorbis, or FLAC and re-encode with LAME at 128 kbps:
 modern-ices -F playlist.txt -R -b 128
 ```
 
+Randomize playlist order once at startup:
+
+```sh
+modern-ices -F playlist.txt -r
+```
+
 Crossfade between decoded tracks:
 
 ```sh

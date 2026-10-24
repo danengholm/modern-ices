@@ -71,6 +71,7 @@ void Config::print_usage(const char* argv0) {
         << "  -b, --bitrate KBPS       output bitrate for transcoding [128]\n"
         << "  -x, --crossfade SECONDS  crossfade length; requires --reencode [0]\n"
         << "  -R, --reencode           decode MP3, Ogg Vorbis, or FLAC and re-encode to bitrate\n"
+        << "  -r, --randomize          randomize playlist order at startup\n"
         << "      --once               stream each playlist entry once, then exit\n"
         << "  -s[FORMAT], --timestamp[=FORMAT]\n"
         << "                           prepend strftime timestamps to log messages [%c]\n"
@@ -112,6 +113,8 @@ Config Config::parse(int argc, char** argv) {
             config.crossfade_seconds = parse_int(require_value(i, argc, argv, arg), arg, 0, 3600);
         } else if (arg == "-R" || arg == "--reencode") {
             config.reencode = true;
+        } else if (arg == "-r" || arg == "--randomize") {
+            config.randomize_playlist = true;
         } else if (arg == "--once") {
             config.once = true;
         } else if (arg == "-s" || arg == "--timestamp") {
