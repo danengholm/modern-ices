@@ -73,7 +73,7 @@ void Config::print_usage(const char* argv0) {
         << "  -R, --reencode           decode MP3, Ogg Vorbis, or FLAC and re-encode to bitrate\n"
         << "      --once               stream each playlist entry once, then exit\n"
         << "  -s[FORMAT], --timestamp[=FORMAT]\n"
-        << "                           prepend strftime timestamps to log messages [%G]\n"
+        << "                           prepend strftime timestamps to log messages [%c]\n"
         << "  -v, --verbose            verbose logging\n"
         << "      --help               show this help\n";
 }
@@ -116,7 +116,7 @@ Config Config::parse(int argc, char** argv) {
             config.once = true;
         } else if (arg == "-s" || arg == "--timestamp") {
             config.log_timestamps = true;
-            config.log_timestamp_format = optional_value(i, argc, argv, "%G");
+            config.log_timestamp_format = optional_value(i, argc, argv, "%c");
         } else if (arg.starts_with("-s") && arg.size() > 2) {
             config.log_timestamps = true;
             config.log_timestamp_format = std::string(arg.substr(2));
