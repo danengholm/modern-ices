@@ -1,0 +1,127 @@
+.Dd October 23, 2026
+.Dt MODERN-ICES 1
+.Os
+.Sh NAME
+.Nm modern-ices
+.Nd Icecast source client with MP3 transcoding support
+.Sh SYNOPSIS
+.Nm
+.Op Fl R
+.Op Fl v
+.Op Fl F Ar file
+.Op Fl h Ar host
+.Op Fl p Ar port
+.Op Fl P Ar password
+.Op Fl m Ar mount
+.Op Fl u Ar url
+.Op Fl n Ar name
+.Op Fl g Ar genre
+.Op Fl d Ar description
+.Op Fl t Ar protocol
+.Op Fl b Ar kbps
+.Op Fl x Ar seconds
+.Op Fl -once
+.Sh DESCRIPTION
+.Nm
+streams audio files from a playlist to an Icecast-compatible streaming server.
+MP3 input can be sent directly, or input files can be decoded and re-encoded
+to MP3 with LAME.
+.Pp
+When re-encoding is enabled,
+.Nm
+can decode MP3, Ogg Vorbis, and FLAC input files. Re-encoding is also required
+for crossfaded playback.
+.Sh OPTIONS
+.Bl -tag -width Ds
+.It Fl F , Fl -playlist Ar file
+Read playlist entries from
+.Ar file .
+The default is
+.Pa playlist.txt .
+.It Fl h , Fl -host Ar host
+Connect to streaming server
+.Ar host .
+The default is
+.Pa 127.0.0.1 .
+.It Fl p , Fl -port Ar port
+Connect to streaming server
+.Ar port .
+The default is
+.Li 8000 .
+.It Fl P , Fl -password Ar password
+Use
+.Ar password
+as the source password.
+The default is
+.Pa hackme .
+.It Fl m , Fl -mount Ar mount
+Publish the stream at
+.Ar mount .
+The mount point must begin with
+.Sq / .
+The default is
+.Pa /ices .
+.It Fl u , Fl -url Ar url
+Set the stream URL metadata.
+.It Fl n , Fl -name Ar name
+Set the stream name metadata.
+.It Fl g , Fl -genre Ar genre
+Set the stream genre metadata.
+.It Fl d , Fl -description Ar description
+Set the stream description metadata.
+.It Fl t , Fl -protocol Ar http Ns | Ns Ar icy
+Select the streaming protocol.
+The default is
+.Cm http .
+.It Fl b , Fl -bitrate Ar kbps
+Set the output bitrate, in kbps, when re-encoding.
+The default is
+.Li 128 .
+.It Fl x , Fl -crossfade Ar seconds
+Crossfade between decoded tracks for
+.Ar seconds .
+Crossfade requires
+.Fl -reencode .
+The default is
+.Li 0 ,
+which disables crossfading.
+.It Fl R , Fl -reencode
+Decode input files and re-encode the stream to MP3.
+This enables MP3, Ogg Vorbis, and FLAC input.
+.It Fl -once
+Stream each playlist entry once, then exit.
+.It Fl v , Fl -verbose
+Enable verbose logging.
+.It Fl -help
+Show command-line help and exit.
+.El
+.Sh PLAYLISTS
+Playlist files contain one audio path per line.
+Blank lines and lines beginning with
+.Sq #
+are ignored.
+.Pp
+In continuous mode,
+.Nm
+wraps to the beginning of the in-memory playlist after the last entry.
+.Sh EXAMPLES
+Stream MP3 files without transcoding:
+.Bd -literal -offset indent
+modern-ices -F playlist.txt -h localhost -p 8000 -P hackme -m /stream
+.Ed
+.Pp
+Decode MP3, Ogg Vorbis, or FLAC input and re-encode to 128 kbps MP3:
+.Bd -literal -offset indent
+modern-ices -F playlist.txt -R -b 128
+.Ed
+.Pp
+Crossfade decoded tracks for five seconds:
+.Bd -literal -offset indent
+modern-ices -F playlist.txt -R -x 5
+.Ed
+.Sh SEE ALSO
+.Xr icecast 1
+.Sh HISTORY
+.Nm
+is a modern C++ reimplementation inspired by the IceS/ices 0.x source client
+from the Xiph.Org Icecast project.
