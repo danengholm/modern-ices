@@ -76,6 +76,18 @@ Crossfade between decoded tracks:
 modern-ices -F playlist.txt -R -x 5
 ```
 
+Prepend timestamps to log output with the default `strftime` format `%G`:
+
+```sh
+modern-ices -F playlist.txt -s
+```
+
+Use a custom `strftime` format:
+
+```sh
+modern-ices -F playlist.txt -s '%Y-%m-%d %H:%M:%S'
+```
+
 Use `modern-ices --help` for all supported options.
 
 ## Development Process
