@@ -3,6 +3,7 @@ set -eu
 
 prefix=/usr/local
 bindir='${prefix}/bin'
+mandir='${prefix}/share/man'
 CXX=${CXX:-c++}
 CXXFLAGS=${CXXFLAGS:-"-O2 -g"}
 CPPFLAGS=${CPPFLAGS:-}
@@ -19,6 +20,7 @@ Usage: ./configure [OPTIONS]
 Options:
   --prefix=DIR          installation prefix [/usr/local]
   --bindir=DIR          binary directory [PREFIX/bin]
+  --mandir=DIR          manual page directory [PREFIX/share/man]
   --with-shout=DIR      libshout prefix
   --with-mpg123=DIR     libmpg123 prefix
   --with-lame=DIR       libmp3lame prefix
@@ -36,6 +38,7 @@ for arg in "$@"; do
   case "$arg" in
     --prefix=*) prefix=${arg#*=} ;;
     --bindir=*) bindir=${arg#*=} ;;
+    --mandir=*) mandir=${arg#*=} ;;
     --with-shout=*|--with-mpg123=*|--with-lame=*|--with-vorbis=*|--with-flac=*)
       d=${arg#*=}
       extra_cppflags="$extra_cppflags -I$d/include"
@@ -124,6 +127,7 @@ rm -f "$tmp_cxx.cpp" "$tmp_cxx"
 sed \
   -e "s|@prefix@|$prefix|g" \
   -e "s|@bindir@|$bindir|g" \
+  -e "s|@mandir@|$mandir|g" \
   -e "s|@CXX@|$CXX|g" \
   -e "s|@CXXFLAGS@|$CXXFLAGS|g" \
   -e "s|@CPPFLAGS@|$CPPFLAGS|g" \
@@ -134,6 +138,7 @@ sed \
 cat > config.mk <<EOF
 prefix=$prefix
 bindir=$bindir
+mandir=$mandir
 CXX=$CXX
 CXXFLAGS=$CXXFLAGS
 CPPFLAGS=$CPPFLAGS

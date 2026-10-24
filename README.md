@@ -30,6 +30,29 @@ http://svn.xiph.org/icecast/trunk/ices0/
 
 ## Build
 
+Install the prerequisite build packages for your platform first. The package
+manager will also install the matching runtime libraries.
+
+### Debian And Family
+
+On Debian, Ubuntu, and related distributions:
+
+```sh
+sudo apt install build-essential pkg-config libshout3-dev libmpg123-dev \
+  libmp3lame-dev libvorbis-dev libflac-dev
+```
+
+### Fedora
+
+On Fedora:
+
+```sh
+sudo dnf install gcc-c++ make pkgconf-pkg-config libshout-devel \
+  mpg123-devel lame-devel libvorbis-devel flac-devel
+```
+
+### Configure And Install
+
 ```sh
 ./configure --prefix=/usr/local
 make
@@ -49,6 +72,18 @@ Equivalent explicit dependency prefixes are also supported:
 ./configure --with-shout=/opt/ice --with-mpg123=/opt/ice --with-lame=/opt/ice \
   --with-vorbis=/opt/ice --with-flac=/opt/ice
 ```
+
+The current build expects all of the audio libraries above to be available.
+The `--with-*` options tell `configure` where a dependency is installed when it
+is not in the compiler's default search path:
+
+| Configure option | Dependency | Used for |
+| --- | --- | --- |
+| `--with-shout=DIR` | libshout | Connecting to Icecast-compatible streaming servers |
+| `--with-mpg123=DIR` | libmpg123 | MP3 decoding when `--reencode` is enabled |
+| `--with-lame=DIR` | libmp3lame | MP3 encoding when `--reencode` or crossfade output is enabled |
+| `--with-vorbis=DIR` | libvorbisfile | Ogg Vorbis decoding when `--reencode` is enabled |
+| `--with-flac=DIR` | libFLAC | FLAC decoding when `--reencode` is enabled |
 
 ## Run
 
