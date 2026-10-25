@@ -103,7 +103,7 @@ void IcecastClient::sync() noexcept {
 
 void IcecastClient::check(int rc, const std::string& action) const {
     if (rc != SHOUTERR_SUCCESS) {
-        throw Error(last_error(action));
+        throw Error(last_error(action), rc);
     }
 }
 
