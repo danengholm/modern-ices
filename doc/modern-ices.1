@@ -1,4 +1,4 @@
-.Dd October 23, 2026
+.Dd November 7, 2026
 .Dt MODERN-ICES 1
 .Os
 .Sh NAME
@@ -7,7 +7,9 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl R
+.Op Fl r
 .Op Fl v
+.Op Fl s Ns Op Ar format
 .Op Fl F Ar file
 .Op Fl h Ar host
 .Op Fl p Ar port
@@ -21,6 +23,8 @@
 .Op Fl b Ar kbps
 .Op Fl x Ar seconds
 .Op Fl -once
+.Op Fl -timestamp Ns Oo = Ns Ar format Oc
+.Op Fl -timestamp-format Ar format
 .Sh DESCRIPTION
 .Nm
 streams audio files from a playlist to an Icecast-compatible streaming server.
@@ -88,6 +92,25 @@ which disables crossfading.
 .It Fl R , Fl -reencode
 Decode input files and re-encode the stream to MP3.
 This enables MP3, Ogg Vorbis, and FLAC input.
+.It Fl r , Fl -randomize
+Randomize playlist order once at startup.
+.Nm
+keeps using that shuffled order when continuous playback wraps to the beginning
+of the playlist.
+.It Fl s , Fl s Ns Ar format , Fl -timestamp , Fl -timestamp= Ns Ar format
+Prepend timestamps to log messages.
+If
+.Ar format
+is omitted, the default
+.Xr strftime 3
+format is
+.Sq %c .
+.It Fl -timestamp-format Ar format
+Prepend timestamps to log messages using
+.Ar format
+as the
+.Xr strftime 3
+format string.
 .It Fl -once
 Stream each playlist entry once, then exit.
 .It Fl v , Fl -verbose
